@@ -127,8 +127,8 @@
   
   <!-- បឋមកថា -->
   <div class="header-card text-center">
-    <button type="button" class="btn btn-sm btn-link text-white position-absolute top-0 end-0 m-2 text-decoration-none" onclick="configureGasUrl()" title="កំណត់ Web App API URL">
-      ⚙️ API
+    <button type="button" class="btn btn-sm btn-link text-white position-absolute top-0 end-0 m-2 text-decoration-none" onclick="configureGasUrl()" title="កំណត់ Web App API URL (ការពារដោយលេខកូដ 168)">
+      ⚙️ API 🔒
     </button>
     <div class="moul-title fs-6 mb-1">ព្រះរាជាណាចក្រកម្ពុជា</div>
     <div class="moul-title fs-6 mb-2">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
@@ -412,8 +412,15 @@
   }
 
   function configureGasUrl() {
+    const pin = prompt("🔐 ប្រព័ន្ធការពារ៖ សូមបញ្ចូលលេខកូដសម្ងាត់ (PIN) ដើម្បីកំណត់ API៖");
+    if (pin === null) return; // ចុច Cancel
+    if (pin.trim() !== API_PIN) {
+      alert("❌ លេខកូដសម្ងាត់មិនត្រឹមត្រូវទេ! (Access Denied)");
+      return;
+    }
+
     const current = GAS_API_URL || '';
-    const input = prompt("សូមបញ្ចូល Web App URL របស់ Google Apps Script (https://script.google.com/macros/s/.../exec)៖", current);
+    const input = prompt("✅ កូដត្រឹមត្រូវ! សូមបញ្ចូល Web App URL របស់ Google Apps Script (https://script.google.com/macros/s/.../exec)៖", current);
     if (input !== null && input.trim()) {
       GAS_API_URL = input.trim();
       localStorage.setItem('thlok_gas_api_url', GAS_API_URL);
