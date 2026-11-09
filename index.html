@@ -542,37 +542,21 @@
           </div>
           
           <div class="row g-2">
-            <div class="col-6">
-              <label class="small text-muted fw-bold d-block mb-1" style="font-size:12px;">ស.ស (វត្តមានសរុប)</label>
-              <div class="input-group input-group-sm">
-                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_att', -1)">−</button>
-                <input type="number" id="${c.key}_att" class="form-control input-count" value="0" min="0" oninput="handleStudentInputChange()">
-                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_att', 1)">+</button>
-              </div>
+            <div class="col-6 col-md-3">
+              <label class="small text-muted fw-bold d-block mb-1" style="font-size:13px;">ស.ស (វត្តមានសរុប)</label>
+              <input type="number" id="${c.key}_att" class="form-control form-control-lg fw-bold text-center text-primary border-2 shadow-sm" value="0" min="0" inputmode="numeric" onfocus="if(this.value=='0')this.value=''" onblur="if(this.value=='')this.value='0'" oninput="handleStudentInputChange()">
             </div>
-            <div class="col-6">
-              <label class="small text-muted fw-bold d-block mb-1" style="font-size:12px;">ស.ស្រី (វត្តមានស្រី)</label>
-              <div class="input-group input-group-sm">
-                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_fAtt', -1)">−</button>
-                <input type="number" id="${c.key}_fAtt" class="form-control input-count" value="0" min="0" oninput="handleStudentInputChange()">
-                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_fAtt', 1)">+</button>
-              </div>
+            <div class="col-6 col-md-3">
+              <label class="small text-muted fw-bold d-block mb-1" style="font-size:13px;">ស.ស្រី (វត្តមានស្រី)</label>
+              <input type="number" id="${c.key}_fAtt" class="form-control form-control-lg fw-bold text-center text-primary border-2 shadow-sm" value="0" min="0" inputmode="numeric" onfocus="if(this.value=='0')this.value=''" onblur="if(this.value=='')this.value='0'" oninput="handleStudentInputChange()">
             </div>
-            <div class="col-6">
-              <label class="small text-muted fw-bold d-block mb-1" style="font-size:12px;">ស.ហូប (ហូបសរុប)</label>
-              <div class="input-group input-group-sm">
-                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_eat', -1)">−</button>
-                <input type="number" id="${c.key}_eat" class="form-control input-count" value="0" min="0" oninput="handleStudentInputChange()">
-                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_eat', 1)">+</button>
-              </div>
+            <div class="col-6 col-md-3">
+              <label class="small text-muted fw-bold d-block mb-1" style="font-size:13px;">ស.ហូប (ហូបសរុប)</label>
+              <input type="number" id="${c.key}_eat" class="form-control form-control-lg fw-bold text-center text-success border-2 shadow-sm" value="0" min="0" inputmode="numeric" onfocus="if(this.value=='0')this.value=''" onblur="if(this.value=='')this.value='0'" oninput="handleStudentInputChange()">
             </div>
-            <div class="col-6">
-              <label class="small text-muted fw-bold d-block mb-1" style="font-size:12px;">ហ.ស្រី (ហូបស្រី)</label>
-              <div class="input-group input-group-sm">
-                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_fEat', -1)">−</button>
-                <input type="number" id="${c.key}_fEat" class="form-control input-count" value="0" min="0" oninput="handleStudentInputChange()">
-                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_fEat', 1)">+</button>
-              </div>
+            <div class="col-6 col-md-3">
+              <label class="small text-muted fw-bold d-block mb-1" style="font-size:13px;">ហ.ស្រី (ហូបស្រី)</label>
+              <input type="number" id="${c.key}_fEat" class="form-control form-control-lg fw-bold text-center text-success border-2 shadow-sm" value="0" min="0" inputmode="numeric" onfocus="if(this.value=='0')this.value=''" onblur="if(this.value=='')this.value='0'" oninput="handleStudentInputChange()">
             </div>
           </div>
         </div>
@@ -672,9 +656,6 @@
       const input = document.getElementById(`${key}_${type}`);
       if (input) input.disabled = true;
     });
-    if (card) {
-      card.querySelectorAll('.btn-stepper').forEach(b => b.disabled = true);
-    }
   }
 
   function unlockClass(key) {
@@ -695,9 +676,6 @@
         const input = document.getElementById(`${key}_${type}`);
         if (input) input.disabled = false;
       });
-      if (card) {
-        card.querySelectorAll('.btn-stepper').forEach(b => b.disabled = false);
-      }
       isEditingManually = true;
     }
   }
@@ -714,7 +692,6 @@
       const card = document.getElementById(`card_${c.key}`);
       if (card) {
         card.classList.remove('is-locked');
-        card.querySelectorAll('.btn-stepper').forEach(b => b.disabled = false);
       }
       const badge = document.getElementById(`badge_${c.key}`);
       if (badge) {
