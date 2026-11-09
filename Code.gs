@@ -80,24 +80,62 @@ function handleApiGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ស្វែងរក Sheet ដោយស្វ័យប្រវត្តិ (ពិនិត្យមើលសន្លឹកណាដែលមានទិន្នន័យជាក់ស្តែង)
+// ពិនិត្យមើលឈ្មោះ Sheet ថាត្រូវនឹងខែដែលបានជ្រើសរើសដែរឬទេ (ការពារមិនឱ្យច្រឡំខែ ១ ជាមួយ ១១ ឬ ១២)
+function isSheetMatchingMonth(sheetName, primaryKeyword, m) {
+  if (!sheetName.includes(primaryKeyword)) return false;
+
+  const khmerNums = { 1: '១', 2: '២', 3: '៣', 4: '៤', 5: '៥', 6: '៦', 7: '៧', 8: '៨', 9: '៩', 10: '១០', 11: '១១', 12: '១២' };
+  const monthWords = {
+    11: ['វិច្ឆិកា'],
+    12: ['ធ្នូ'],
+    1:  ['មករា'],
+    2:  ['កុម្ភៈ'],
+    3:  ['មីនា'],
+    4:  ['មេសា'],
+    5:  ['ឧសភា'],
+    6:  ['មិថុនា'],
+    7:  ['កក្កដា'],
+    8:  ['សីហា']
+  };
+
+  // ១. ពិនិត្យតាមពាក្យឈ្មោះខែ
+  const words = monthWords[m] || [];
+  for (let i = 0; i < words.length; i++) {
+    if (sheetName.includes(words[i])) return true;
+  }
+
+  // ២. ពិនិត្យតាមលេខខែ ដោយមិនឱ្យច្រឡំលេខ ១ ជាមួយ ១១ ឬ ១២
+  const khM = khmerNums[m] || String(m);
+  const padM = m < 10 ? '0' + m : String(m);
+  const padKhM = m < 10 ? '០' + khM : khM;
+
+  const pattern = new RegExp('(?:^|[^0-9០-៩])(?:' + m + '|' + padM + '|' + khM + '|' + padKhM + ')(?:[^0-9០-៩]|$)', 'u');
+  return pattern.test(sheetName);
+}
+
+// ស្វែងរក Sheet ដោយស្វ័យប្រវត្តិ ធានាចំសន្លឹកនៃខែនោះផ្ទាល់
 function getSheetForMonth(ss, type, month) {
   const allSheets = ss.getSheets();
   const m = parseInt(month) || (new Date().getMonth() + 1);
-  const khmerNums = { 1: '១', 2: '២', 3: '៣', 4: '៤', 5: '៥', 6: '៦', 7: '៧', 8: '៨', 9: '៩', 10: '១០', 11: '១១', 12: '១២' };
-  const khM = khmerNums[m] || String(m);
   const isSchool = (type === 'school');
   const primaryKeyword = isSchool ? 'សាលា' : 'ថ្នាក់';
 
-  // ១. ស្វែងរក Sheet ជាក់លាក់នៃខែនោះដែលមានទិន្នន័យ
+  // ១. ស្វែងរក Sheet ជាក់លាក់នៃខែនោះ (ឧ. ទិន្នន័យសាលា_ខែ11, ទិន្នន័យសាលា_ខែ12...)
   for (let s of allSheets) {
-    const name = s.getName();
-    if (name.includes(primaryKeyword) && (name.includes(String(m)) || name.includes(khM))) {
+    if (isSheetMatchingMonth(s.getName(), primaryKeyword, m)) {
       return s;
     }
   }
 
-  // ២. ស្វែងរក Sheet មេដើម "ទិន្នន័យសាលា" ឬ "ទិន្នន័យថ្នាក់"
+  // ២. បើពុំទាន់មាន Sheet ដាច់ដោយឡែកនៃខែនោះ ស្វែងរក Sheet គំរូដើម "ទិន្នន័យសាលា" ឬ "ទិន្នន័យថ្នាក់"
+  for (let s of allSheets) {
+    const name = s.getName().trim();
+    if (name === (isSchool ? 'ទិន្នន័យសាលា' : 'ទិន្នន័យថ្នាក់')) {
+      return s;
+    }
+  }
+
+  // ៣. បើគ្មានទៀត ស្វែងរក Sheet ណាដែលមានពាក្យ "សាលា" ឬ "ថ្នាក់"
   for (let s of allSheets) {
     const name = s.getName();
     if (name.includes(primaryKeyword)) {
@@ -342,6 +380,9 @@ function getInitialData(month, day) {
     day: d,
     spreadsheetId: ss.getId(),
     schoolSheetGid: sheetSchool.getSheetId(),
+    schoolSheetName: sheetSchool.getName(),
+    classSheetGid: sheetClass.getSheetId(),
+    classSheetName: sheetClass.getName(),
     classList: classList,
     todayData: {
       totalClassData: todayClassData,

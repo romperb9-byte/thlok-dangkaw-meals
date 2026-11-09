@@ -236,14 +236,19 @@
     <!-- ប៊ូតុងទាញយករបាយការណ៍សាលាជា PDF និង Excel -->
     <div class="border-top pt-2">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <span class="small fw-bold text-dark">📄 ទាញយករបាយការណ៍សាលា៖</span>
-        <div class="d-flex gap-2">
-          <a id="btnPdf" href="#" target="_blank" class="btn btn-outline-danger btn-sm fw-bold px-3 py-1 text-decoration-none">
-            📕 ទាញយក PDF
-          </a>
-          <a id="btnExcel" href="#" target="_blank" class="btn btn-outline-success btn-sm fw-bold px-3 py-1 text-decoration-none">
+        <span class="small fw-bold text-dark">
+          📄 របាយការណ៍ <span id="downloadMonthName" class="badge bg-primary text-white">ខែ...</span>៖
+        </span>
+        <div class="d-flex flex-wrap gap-2">
+          <button type="button" onclick="downloadReport('pdf', 'school')" class="btn btn-outline-danger btn-sm fw-bold px-3 py-1 shadow-sm">
+            📕 ទាញយក PDF សាលា
+          </button>
+          <button type="button" onclick="downloadReport('excel', 'school')" class="btn btn-outline-success btn-sm fw-bold px-3 py-1 shadow-sm">
             📗 ទាញយក Excel
-          </a>
+          </button>
+          <button type="button" onclick="downloadReport('pdf', 'class')" class="btn btn-outline-secondary btn-sm fw-bold px-2 py-1 shadow-sm" title="ទាញយកសន្លឹកទិន្នន័យវត្តមានតាមថ្នាក់ប្រចាំខែនេះ">
+            📑 PDF ថ្នាក់
+          </button>
         </div>
       </div>
     </div>
@@ -348,6 +353,29 @@
   let classList = [...defaultClassList];
   let lockedClasses = {};
   let isEditingManually = false;
+
+  // អថេរសម្រាប់ទាញយករបាយការណ៍ PDF / Excel តាមខែជាក់ស្តែង
+  let currentSpreadsheetId = '1eO7G0Z8r9_0Ms0PnURnz-QqzXm0sZrSJX9lFS5Dves8';
+  let currentSchoolGid = 1578172104;
+  let currentClassGid = null;
+  let currentSchoolName = '';
+  let currentClassName = '';
+
+  function downloadReport(format, type = 'school') {
+    const gid = (type === 'school') ? currentSchoolGid : currentClassGid;
+    if (!currentSpreadsheetId || gid === null || gid === undefined) {
+      alert("ទិន្នន័យនៃខែនេះកំពុងទាញយក សូមរង់ចាំមួយភ្លែត រួចសាកល្បងចុចម្តងទៀត!");
+      return;
+    }
+
+    if (format === 'pdf') {
+      const url = `https://docs.google.com/spreadsheets/d/${currentSpreadsheetId}/export?exportFormat=pdf&format=pdf&gid=${gid}&size=A4&portrait=false&fitw=true&gridlines=true&printtitle=false&sheetnames=false&fzr=false&attachment=true`;
+      window.open(url, '_blank');
+    } else if (format === 'excel') {
+      const url = `https://docs.google.com/spreadsheets/d/${currentSpreadsheetId}/export?format=xlsx&gid=${gid}`;
+      window.open(url, '_blank');
+    }
+  }
 
   // មុខងារហៅ API (ភ្ជាប់ជាមួយ PIN 168)
   function callBackend(action, params = {}, method = 'GET') {
@@ -456,6 +484,7 @@
 
     updateDaysDropdown();
     document.getElementById('selectedDay').value = Math.min(now.getDate(), 30);
+    updateMonthBadge();
   }
 
   function updateDaysDropdown() {
@@ -476,7 +505,16 @@
 
   function onMonthChange() {
     updateDaysDropdown();
+    updateMonthBadge();
     fetchData();
+  }
+
+  function updateMonthBadge() {
+    const m = document.getElementById('selectedMonth').value;
+    const mObj = COOKING_MONTHS.find(x => x.id == m);
+    const mName = mObj ? mObj.name : `ខែ ${m}`;
+    const dlBadge = document.getElementById('downloadMonthName');
+    if (dlBadge) dlBadge.innerText = mName;
   }
 
   function onDayChange() {
@@ -724,16 +762,13 @@
 
     resetAllClassInputs();
 
-    // Link ទាញយកឯកសារ PDF និង Excel ផ្ទាល់
-    const ssId = res.spreadsheetId;
-    const gid = res.schoolSheetGid;
-    if (ssId && gid !== undefined) {
-      document.getElementById('btnPdf').href = 
-        `https://docs.google.com/spreadsheets/d/${ssId}/export?exportFormat=pdf&format=pdf&gid=${gid}&size=A4&portrait=false&fitw=true&gridlines=true&printtitle=false&sheetnames=false&fzr=false`;
-      
-      document.getElementById('btnExcel').href = 
-        `https://docs.google.com/spreadsheets/d/${ssId}/export?format=xlsx&gid=${gid}`;
-    }
+    // រក្សាទុក ID និង GID សម្រាប់ទាញយក PDF / Excel តាមខែដែលកំពុងស្ថិតនៅ
+    currentSpreadsheetId = res.spreadsheetId || currentSpreadsheetId;
+    currentSchoolGid = res.schoolSheetGid;
+    currentClassGid = res.classSheetGid;
+    currentSchoolName = res.schoolSheetName || '';
+    currentClassName = res.classSheetName || '';
+    updateMonthBadge();
 
     // សង្ខេបប្រចាំខែ
     document.getElementById('dispRecDays').innerText = `កត់ត្រា ${res.monthSummary.recordedDays} ថ្ងៃ`;
