@@ -1,11 +1,17 @@
 /**
  * ប្រព័ន្ធគ្រប់គ្រងវត្តមាន និងអាហារពេលព្រឹកសិស្ស
  * សាលាបឋមសិក្សាថ្លុកដង្កោ - ឆ្នាំសិក្សា ២០២៥-២០២៦
- * គាំទ្រទាំង Google Apps Script Web App និង GitHub Pages (Web API)
+ * API Protected with PIN: 168
  */
 
+const API_PIN = "168"; // លេខកូដសម្ងាត់ការពារ API
+
+function checkPin(pin) {
+  return String(pin).trim() === API_PIN;
+}
+
 function doGet(e) {
-  // ប្រសិនបើហៅចេញពី GitHub Pages តាមរយៈ API (JSON Request)
+  // ប្រសិនបើជា API Request ពី GitHub Pages (JSON)
   if (e && e.parameter && e.parameter.action) {
     return handleApiGet(e);
   }
@@ -22,13 +28,23 @@ function doPost(e) {
   try {
     const rawData = e.postData.contents;
     const body = JSON.parse(rawData);
-    const action = body.action || (e.parameter && e.parameter.action);
+    const pin = body.pin || (e.parameter && e.parameter.pin);
 
+    // ពិនិត្យលេខកូដសម្ងាត់ PIN 168
+    if (!checkPin(pin)) {
+      return ContentService.createTextOutput(JSON.stringify({ 
+        success: false, 
+        message: 'លេខកូដសម្ងាត់មិនត្រឹមត្រូវ (PIN Invalid)!' 
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const action = body.action || (e.parameter && e.parameter.action);
     let res = {};
+
     if (action === 'saveDailyRecord') {
       res = saveDailyRecord(body.data || body);
     } else if (action === 'addNewClass') {
-      res = addNewClassToSystem(body.className);
+      res = addNewClassToSystem(body.className || (body.data && body.data.className));
     } else {
       res = { success: false, message: 'សកម្មភាពមិនត្រឹមត្រូវ' };
     }
@@ -42,6 +58,15 @@ function doPost(e) {
 }
 
 function handleApiGet(e) {
+  const pin = e.parameter.pin;
+
+  // ពិនិត្យលេខកូដសម្ងាត់ PIN 168
+  if (!checkPin(pin)) {
+    return ContentService.createTextOutput(JSON.stringify({ 
+      error: 'លេខកូដសម្ងាត់មិនត្រឹមត្រូវ (PIN Invalid)!' 
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
   const action = e.parameter.action;
   let res = {};
 
@@ -49,8 +74,6 @@ function handleApiGet(e) {
     res = getInitialData(e.parameter.month, e.parameter.day);
   } else if (action === 'addNewClass') {
     res = addNewClassToSystem(e.parameter.className);
-  } else if (action === 'exportReport') {
-    res = exportSchoolReport(e.parameter.month, e.parameter.format);
   } else {
     res = { error: 'Unknown action' };
   }
