@@ -30,7 +30,6 @@ function doPost(e) {
     const body = JSON.parse(rawData);
     const pin = body.pin || (e.parameter && e.parameter.pin);
 
-    // ពិនិត្យលេខកូដសម្ងាត់ PIN 168
     if (!checkPin(pin)) {
       return ContentService.createTextOutput(JSON.stringify({ 
         success: false, 
@@ -60,7 +59,6 @@ function doPost(e) {
 function handleApiGet(e) {
   const pin = e.parameter.pin;
 
-  // ពិនិត្យលេខកូដសម្ងាត់ PIN 168
   if (!checkPin(pin)) {
     return ContentService.createTextOutput(JSON.stringify({ 
       error: 'លេខកូដសម្ងាត់មិនត្រឹមត្រូវ (PIN Invalid)!' 
@@ -82,61 +80,91 @@ function handleApiGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ស្វែងរក Sheet តាមខែដោយឆ្លាតវៃ
+// ស្វែងរក Sheet ដោយស្វ័យប្រវត្តិ (ពិនិត្យមើលសន្លឹកណាដែលមានទិន្នន័យជាក់ស្តែង)
 function getSheetForMonth(ss, type, month) {
+  const allSheets = ss.getSheets();
+  const m = parseInt(month) || (new Date().getMonth() + 1);
   const khmerNums = { 1: '១', 2: '២', 3: '៣', 4: '៤', 5: '៥', 6: '៦', 7: '៧', 8: '៨', 9: '៩', 10: '១០', 11: '១១', 12: '១២' };
-  const khMonth = khmerNums[month] || month;
-  const baseName = (type === 'school') ? 'ទិន្នន័យសាលា' : 'ទិន្នន័យថ្នាក់';
+  const khM = khmerNums[m] || String(m);
+  const isSchool = (type === 'school');
+  const primaryKeyword = isSchool ? 'សាលា' : 'ថ្នាក់';
 
-  const candidateNames = [
-    `${baseName}_ខែ${month}`,
-    `${baseName}_ខែ${khMonth}`,
-    `${baseName} ខែ${month}`,
-    `${baseName} ខែ${khMonth}`,
-    `${baseName}_${month}`,
-    `${baseName}${month}`,
-    `ខែ${month}`,
-    `ខែ${khMonth}`,
-    baseName
-  ];
-
-  for (let name of candidateNames) {
-    const s = ss.getSheetByName(name);
-    if (s) return s;
+  // ១. ស្វែងរក Sheet ជាក់លាក់នៃខែនោះដែលមានទិន្នន័យ
+  for (let s of allSheets) {
+    const name = s.getName();
+    if (name.includes(primaryKeyword) && (name.includes(String(m)) || name.includes(khM))) {
+      return s;
+    }
   }
 
-  const template = ss.getSheetByName(baseName);
-  if (template) {
-    const newName = `${baseName}_ខែ${month}`;
-    return template.copyTo(ss).setName(newName);
+  // ២. ស្វែងរក Sheet មេដើម "ទិន្នន័យសាលា" ឬ "ទិន្នន័យថ្នាក់"
+  for (let s of allSheets) {
+    const name = s.getName();
+    if (name.includes(primaryKeyword)) {
+      return s;
+    }
   }
 
-  return ss.getSheets()[0];
+  return allSheets[0];
 }
 
-// ស្វែងរកជួរដេកពិតប្រាកដដែលត្រូវនឹងថ្ងៃទីនោះ (Auto Scan Column A)
+function parseDayNumber(val) {
+  if (val === null || val === undefined || val === '') return null;
+  if (typeof val === 'number') return val;
+  if (val instanceof Date) return val.getDate();
+
+  const khmerDigits = {'០':0, '១':1, '២':2, '៣':3, '៤':4, '៥':5, '៦':6, '៧':7, '៨':8, '៩':9};
+  const str = String(val).trim();
+  let converted = '';
+  for (let ch of str) {
+    if (khmerDigits[ch] !== undefined) {
+      converted += khmerDigits[ch];
+    } else if (ch >= '0' && ch <= '9') {
+      converted += ch;
+    }
+  }
+  const parsed = parseInt(converted, 10);
+  return isNaN(parsed) ? null : parsed;
+}
+
+// ស្វែងរកជួរដេកពិតប្រាកដដែលត្រូវនឹងថ្ងៃទីនោះ (Auto Scan Row 5 ដល់ 45)
 function findRowForDay(sheet, targetDay) {
   const lastRow = Math.min(sheet.getLastRow(), 45);
-  if (lastRow < 7) return targetDay + 6;
+  const target = parseInt(targetDay, 10);
 
-  const colA = sheet.getRange(7, 1, lastRow - 6, 1).getValues();
-  for (let i = 0; i < colA.length; i++) {
-    const val = colA[i][0];
-    if (Number(val) === Number(targetDay)) {
-      return i + 7;
+  if (lastRow >= 5) {
+    const colA = sheet.getRange(5, 1, lastRow - 4, 1).getValues();
+    for (let i = 0; i < colA.length; i++) {
+      const parsedDay = parseDayNumber(colA[i][0]);
+      if (parsedDay === target) {
+        return i + 5;
+      }
     }
-    if (val instanceof Date && val.getDate() === Number(targetDay)) {
-      return i + 7;
-    }
-    if (typeof val === 'string' && val.includes(String(targetDay))) {
-      return i + 7;
+
+    const colB = sheet.getRange(5, 2, lastRow - 4, 1).getValues();
+    for (let i = 0; i < colB.length; i++) {
+      const parsedDay = parseDayNumber(colB[i][0]);
+      if (parsedDay === target) {
+        return i + 5;
+      }
     }
   }
 
-  return targetDay + 6;
+  return target + 6;
 }
 
-// ទាញយកបញ្ជីថ្នាក់ឱ្យជាប់ក្នុងប្រព័ន្ធជាអចិន្ត្រៃយ៍
+// ពិនិត្យមើលថាតើសន្លឹកថ្នាក់មាន ៧ ឬ ៨ ថ្នាក់
+function detectClassCountInSheet(sheetClass) {
+  try {
+    const valAD5 = String(sheetClass.getRange('AD5').getValue() || '').trim();
+    const valAD6 = String(sheetClass.getRange('AD6').getValue() || '').trim();
+    if (valAD5.includes('សរុប') || valAD6.includes('សរុប')) {
+      return 7; // មាន ៧ ថ្នាក់ (Col B ដល់ AC)
+    }
+  } catch (e) {}
+  return 8;
+}
+
 function getSystemClassList(ss) {
   let sheet = ss.getSheetByName('បញ្ជីថ្នាក់');
   const defaultList = [
@@ -201,40 +229,81 @@ function getInitialData(month, day) {
   const sheetClass = getSheetForMonth(ss, 'class', m);
   const sheetSchool = getSheetForMonth(ss, 'school', m);
 
-  const targetRow = findRowForDay(sheetSchool, d);
+  const targetRowSchool = findRowForDay(sheetSchool, d);
+  const targetRowClass = findRowForDay(sheetClass, d);
+
   const maxClassCols = Math.max(sheetClass.getLastColumn(), 60);
+  const todayClassData = sheetClass.getRange(targetRowClass, 1, 1, maxClassCols).getValues()[0];
+  const todaySchoolData = sheetSchool.getRange(targetRowSchool, 1, 1, 10).getValues()[0];
 
-  const todayClassData = sheetClass.getRange(targetRow, 1, 1, maxClassCols).getValues()[0];
-  const todaySchoolData = sheetSchool.getRange(targetRow, 1, 1, 10).getValues()[0];
+  // បែងចែកទិន្នន័យតាមថ្នាក់នីមួយៗចូលទៅក្នុង Map
+  const classCount = detectClassCountInSheet(sheetClass);
+  const classDataMap = {};
+  let sumClassAtt = 0, sumClassFAtt = 0, sumClassEat = 0, sumClassFEat = 0;
 
-  let totalAttend = Number(todaySchoolData[2]) || 0;
-  let femaleAttend = Number(todaySchoolData[3]) || 0;
-  let totalEat = Number(todaySchoolData[4]) || 0;
-  let femaleEat = Number(todaySchoolData[5]) || 0;
+  if (classCount === 7) {
+    // ករណី Sheet មាន ៧ ថ្នាក់ដើម
+    const mapping7 = [
+      { key: 'kindergarten_mid', baseCol: 1 },
+      { key: 'kindergarten_high', baseCol: -1 }, // ពុំមានក្នុង Sheet ៧ ថ្នាក់
+      { key: 'grade1', baseCol: 5 },
+      { key: 'grade2', baseCol: 9 },
+      { key: 'grade3', baseCol: 13 },
+      { key: 'grade4', baseCol: 17 },
+      { key: 'grade5', baseCol: 21 },
+      { key: 'grade6', baseCol: 25 }
+    ];
+
+    mapping7.forEach(mItem => {
+      if (mItem.baseCol !== -1 && todayClassData.length > mItem.baseCol + 3) {
+        const att = Number(todayClassData[mItem.baseCol]) || 0;
+        const fAtt = Number(todayClassData[mItem.baseCol + 1]) || 0;
+        const eat = Number(todayClassData[mItem.baseCol + 2]) || 0;
+        const fEat = Number(todayClassData[mItem.baseCol + 3]) || 0;
+
+        classDataMap[mItem.key] = { attend: att, femaleAttend: fAtt, eat: eat, femaleEat: fEat };
+        sumClassAtt += att; sumClassFAtt += fAtt; sumClassEat += eat; sumClassFEat += fEat;
+      } else {
+        classDataMap[mItem.key] = { attend: 0, femaleAttend: 0, eat: 0, femaleEat: 0 };
+      }
+    });
+  } else {
+    // ករណី Sheet មាន ៨ ថ្នាក់ឡើងទៅ
+    classList.forEach((c, idx) => {
+      const base = 1 + (idx * 4);
+      if (todayClassData.length > base + 3) {
+        const att = Number(todayClassData[base]) || 0;
+        const fAtt = Number(todayClassData[base + 1]) || 0;
+        const eat = Number(todayClassData[base + 2]) || 0;
+        const fEat = Number(todayClassData[base + 3]) || 0;
+
+        classDataMap[c.key] = { attend: att, femaleAttend: fAtt, eat: eat, femaleEat: fEat };
+        sumClassAtt += att; sumClassFAtt += fAtt; sumClassEat += eat; sumClassFEat += fEat;
+      } else {
+        classDataMap[c.key] = { attend: 0, femaleAttend: 0, eat: 0, femaleEat: 0 };
+      }
+    });
+  }
+
+  // ទិន្នន័យសាលា
+  let totalAttend = Number(todaySchoolData[2]) || sumClassAtt;
+  let femaleAttend = Number(todaySchoolData[3]) || sumClassFAtt;
+  let totalEat = Number(todaySchoolData[4]) || sumClassEat;
+  let femaleEat = Number(todaySchoolData[5]) || sumClassFEat;
   let riceToday = Number(todaySchoolData[6]) || 0;
   let oilToday = Number(todaySchoolData[7]) || 0;
   let saltToday = Number(todaySchoolData[8]) || 0;
   const menu = todaySchoolData[9] || '';
 
-  if (totalAttend === 0 && totalEat === 0 && todayClassData.length > 5) {
-    classList.forEach((c, idx) => {
-      const base = 1 + (idx * 4);
-      if (todayClassData.length > base + 3) {
-        totalAttend += Number(todayClassData[base]) || 0;
-        femaleAttend += Number(todayClassData[base + 1]) || 0;
-        totalEat += Number(todayClassData[base + 2]) || 0;
-        femaleEat += Number(todayClassData[base + 3]) || 0;
-      }
-    });
-  }
-
+  // គណនាគ្រឿងឧបភោគបើពុំទាន់កត់ត្រា
   if (totalEat > 0 && riceToday === 0) {
     riceToday = Number((totalEat * 0.115).toFixed(3));
     oilToday = Number((totalEat * 0.005).toFixed(3));
     saltToday = Number((totalEat * 0.001).toFixed(3));
   }
 
-  const lastRow = Math.min(sheetSchool.getLastRow(), 37);
+  // សង្ខេបប្រចាំខែ
+  const lastRow = Math.min(sheetSchool.getLastRow(), 40);
   let recordedDays = 0;
   let totalMonthRice = 0;
   let totalMonthOil = 0;
@@ -277,7 +346,8 @@ function getInitialData(month, day) {
       riceToday: riceToday,
       oilToday: oilToday,
       saltToday: saltToday,
-      menu: menu
+      menu: menu,
+      classes: classDataMap // បញ្ជូនទិន្នន័យថ្នាក់ជាក់លាក់មកផ្ទាល់
     },
     monthSummary: {
       recordedDays: recordedDays,
@@ -299,7 +369,9 @@ function saveDailyRecord(data) {
     const sheetClass = getSheetForMonth(ss, 'class', m);
     const sheetSchool = getSheetForMonth(ss, 'school', m);
 
-    const row = findRowForDay(sheetSchool, d);
+    const rowClass = findRowForDay(sheetClass, d);
+    const rowSchool = findRowForDay(sheetSchool, d);
+
     const classValues = [];
     const list = data.classList || getSystemClassList(ss);
 
@@ -325,9 +397,9 @@ function saveDailyRecord(data) {
 
     classValues.push(sumTotalAttend, sumTotalFemaleAttend, sumTotalEat, sumTotalFemaleEat);
 
-    sheetClass.getRange(row, 2, 1, classValues.length).setValues([classValues]);
+    sheetClass.getRange(rowClass, 2, 1, classValues.length).setValues([classValues]);
 
-    sheetSchool.getRange(row, 2, 1, 9).setValues([[
+    sheetSchool.getRange(rowSchool, 2, 1, 9).setValues([[
       data.cookRice ? 'បាទ/ចាស' : 'ទេ',
       sumTotalAttend,
       sumTotalFemaleAttend,

@@ -774,7 +774,24 @@
 
     // បំពេញទិន្នន័យតាមថ្នាក់នីមួយៗ
     const todayRow = t.totalClassData;
-    if (todayRow && todayRow.length >= 5) {
+    if (t.classes) {
+      classList.forEach(c => {
+        const cd = t.classes[c.key] || { attend: 0, femaleAttend: 0, eat: 0, femaleEat: 0 };
+        const elAtt = document.getElementById(`${c.key}_att`);
+        const elFAtt = document.getElementById(`${c.key}_fAtt`);
+        const elEat = document.getElementById(`${c.key}_eat`);
+        const elFEat = document.getElementById(`${c.key}_fEat`);
+
+        if (elAtt) elAtt.value = cd.attend || 0;
+        if (elFAtt) elFAtt.value = cd.femaleAttend || 0;
+        if (elEat) elEat.value = cd.eat || 0;
+        if (elFEat) elFEat.value = cd.femaleEat || 0;
+
+        if (cd.attend > 0 || cd.eat > 0) {
+          lockClass(c.key);
+        }
+      });
+    } else if (todayRow && todayRow.length >= 5) {
       classList.forEach((c, idx) => {
         const base = 1 + (idx * 4);
         if (todayRow.length > base + 3) {
@@ -783,10 +800,15 @@
           const eat = Number(todayRow[base + 2]) || 0;
           const fEat = Number(todayRow[base + 3]) || 0;
 
-          document.getElementById(`${c.key}_att`).value = att;
-          document.getElementById(`${c.key}_fAtt`).value = fAtt;
-          document.getElementById(`${c.key}_eat`).value = eat;
-          document.getElementById(`${c.key}_fEat`).value = fEat;
+          const elAtt = document.getElementById(`${c.key}_att`);
+          const elFAtt = document.getElementById(`${c.key}_fAtt`);
+          const elEat = document.getElementById(`${c.key}_eat`);
+          const elFEat = document.getElementById(`${c.key}_fEat`);
+
+          if (elAtt) elAtt.value = att;
+          if (elFAtt) elFAtt.value = fAtt;
+          if (elEat) elEat.value = eat;
+          if (elFEat) elFEat.value = fEat;
 
           if (att > 0 || eat > 0) {
             lockClass(c.key);
