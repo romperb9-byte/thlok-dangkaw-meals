@@ -313,7 +313,9 @@
 
 <script>
   // កំណត់ Link Web App API URL (ភ្ជាប់ផ្ទាល់ទៅកាន់ Google Apps Script)
-  let GAS_API_URL = localStorage.getItem('thlok_gas_api_url') || 'https://script.google.com/macros/s/AKfycbzGE1BK2M1z8XXKyY31CSaB-I_DlWEjAUVE9pYBON0NTQlO6ChTO4cqiiQdEv2mx_n2/exec';
+  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbxCbbsmwo-05ib1rzpohhh-_MvfzRryqv1SskjW-relOaO61YtWmWAuC_Tp4pl3hENw/exec';
+  let GAS_API_URL = DEFAULT_GAS_URL;
+  localStorage.setItem('thlok_gas_api_url', DEFAULT_GAS_URL);
   const API_PIN = "168"; // លេខកូដសម្ងាត់ការពារ API
 
   const COOKING_MONTHS = [
