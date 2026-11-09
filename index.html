@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>ប្រព័ន្ធគ្រប់គ្រងវត្តមាន និងអាហារពេលព្រឹកសិស្ស</title>
+  <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;600;700&family=Kantumruy+Pro:wght@400;500;600;700&family=Moul&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-blue: #1d4ed8;
+      --bg-color: #f1f5f9;
+      --card-radius: 16px;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Kantumruy Pro', 'Battambang', sans-serif;
+      background-color: var(--bg-color);
+      color: #1e293b;
+      margin: 0;
+      padding: 8px 8px 75px 8px;
+    }
+    .moul-title { font-family: 'Moul', cursive; }
+    
+    .header-card {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      color: white;
+      border-radius: var(--card-radius);
+      padding: 16px 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+      position: relative;
+    }
+
+    .metric-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 10px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .metric-value { 
+      font-size: 22px; 
+      font-weight: 700; 
+      line-height: 1.2;
+      margin: 4px 0;
+    }
+
+    .class-box {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px 12px;
+      margin-bottom: 12px;
+    }
+    .class-box.is-locked {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .btn-stepper {
+      width: 44px;
+      height: 44px;
+      font-weight: bold;
+      font-size: 20px;
+      padding: 0;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #cbd5e1;
+      background-color: #f8fafc;
+    }
+    .btn-stepper:active {
+      background-color: #e2e8f0;
+      transform: scale(0.95);
+    }
+    .input-count {
+      width: 65px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 18px;
+      border: 1px solid #cbd5e1;
+    }
+
+    .submit-bar {
+      position: sticky;
+      bottom: 10px;
+      z-index: 99;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      padding: 10px 14px;
+      border-radius: 50px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .live-pulse {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background-color: #10b981;
+      border-radius: 50%;
+      margin-right: 4px;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.2); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container-fluid px-1 px-sm-2" style="max-width: 950px; margin: auto;">
+  
+  <!-- បឋមកថា -->
+  <div class="header-card text-center">
+    <button type="button" class="btn btn-sm btn-link text-white position-absolute top-0 end-0 m-2 text-decoration-none" onclick="configureGasUrl()" title="កំណត់ Web App API URL">
+      ⚙️ API
+    </button>
+    <div class="moul-title fs-6 mb-1">ព្រះរាជាណាចក្រកម្ពុជា</div>
+    <div class="moul-title fs-6 mb-2">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+    <h4 class="fw-bold mb-1 fs-5">សាលាបឋមសិក្សាថ្លុកដង្កោ</h4>
+    <p class="mb-2 opacity-75 small">ប្រព័ន្ធកត់ត្រាវត្តមាន និងរបបអាហារសិស្ស — ឆ្នាំសិក្សា ២០២៥-២០២៦</p>
+    
+    <!-- របាជ្រើសរើសខែ និងថ្ងៃ -->
+    <div class="d-flex flex-wrap justify-content-center align-items-center gap-2 mt-2 bg-white bg-opacity-10 p-2 rounded-3">
+      <div class="d-flex align-items-center gap-1">
+        <span class="small">📅 ខែ៖</span>
+        <select id="selectedMonth" class="form-select form-select-sm fw-bold border-0 text-primary w-auto shadow-sm" onchange="onMonthChange()">
+          <!-- បញ្ជី ១០ ខែសម្រាប់ចំអិន -->
+        </select>
+      </div>
+      <div class="d-flex align-items-center gap-1">
+        <span class="small">ថ្ងៃទី៖</span>
+        <select id="selectedDay" class="form-select form-select-sm fw-bold border-0 text-primary w-auto shadow-sm" onchange="onDayChange()">
+          <!-- ថ្ងៃទី -->
+        </select>
+      </div>
+      <button type="button" class="btn btn-light btn-sm fw-bold px-2 py-1 shadow-sm" onclick="fetchData()" title="ទាញទិន្នន័យផ្ទាល់ថ្មីពី Spreadsheet">
+        🔄 Live
+      </button>
+    </div>
+  </div>
+
+  <!-- សង្ខេបប្រចាំថ្ងៃនេះ -->
+  <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+    <h6 class="fw-bold mb-0 text-secondary">
+      <span class="live-pulse"></span>📊 សង្ខេបប្រចាំថ្ងៃនេះ
+    </h6>
+    <span class="badge bg-primary-subtle text-primary border" id="activeDateBadge">កំពុងទាញ...</span>
+  </div>
+
+  <div class="row g-2 mb-3">
+    <div class="col-4">
+      <div class="metric-card">
+        <small class="text-muted d-block small">វត្តមានសិស្ស</small>
+        <span class="metric-value text-primary" id="dispTodayAttend">0</span>
+        <small class="text-muted" id="dispTodayAttendF">(ស្រី 0)</small>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="metric-card">
+        <small class="text-muted d-block small">សិស្សហូប</small>
+        <span class="metric-value text-success" id="dispTodayEat">0</span>
+        <small class="text-muted" id="dispTodayEatF">(ស្រី 0)</small>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="metric-card">
+        <small class="text-muted d-block small">អត្រាហូប</small>
+        <span class="metric-value text-info" id="dispRate">0%</span>
+        <small class="text-muted">ភាគរយ</small>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="metric-card">
+        <small class="text-muted d-block small">អង្ករ (×0.115)</small>
+        <span class="metric-value text-warning" id="dispTodayRice">0</span>
+        <small class="text-muted">គីឡូក្រាម</small>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="metric-card">
+        <small class="text-muted d-block small">ប្រេងឆា (×0.005)</small>
+        <span class="metric-value text-danger" id="dispTodayOil">0</span>
+        <small class="text-muted">លីត្រ (L)</small>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="metric-card">
+        <small class="text-muted d-block small">អំបិល (×0.001)</small>
+        <span class="metric-value text-secondary" id="dispTodaySeasoning">0</span>
+        <small class="text-muted">គីឡូក្រាម</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- សង្ខេបប្រចាំខែនេះ + ប៊ូតុងទាញយករបាយការណ៍ -->
+  <div class="card border-0 shadow-sm rounded-3 p-3 mb-3 bg-white">
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+      <span class="fw-bold small text-secondary">📅 សរុបប្រចាំខែ <span id="monthSummaryLabel"></span></span>
+      <span class="badge bg-light text-dark border" id="dispRecDays">កត់ត្រា 0 ថ្ងៃ</span>
+    </div>
+    <div class="row text-center g-1 mb-3">
+      <div class="col-3">
+        <span class="text-muted d-block" style="font-size: 11px;">មធ្យម/ថ្ងៃ</span>
+        <strong class="text-dark small" id="dispAvgStudents">0 នាក់</strong>
+      </div>
+      <div class="col-3">
+        <span class="text-muted d-block" style="font-size: 11px;">អង្ករសរុប</span>
+        <strong class="text-warning small" id="dispMonthRice">0 Kg</strong>
+      </div>
+      <div class="col-3">
+        <span class="text-muted d-block" style="font-size: 11px;">ប្រេងឆាសរុប</span>
+        <strong class="text-danger small" id="dispMonthOil">0 L</strong>
+      </div>
+      <div class="col-3">
+        <span class="text-muted d-block" style="font-size: 11px;">គ្រឿងទេស</span>
+        <strong class="text-secondary small" id="dispMonthSeasoning">0 Kg</strong>
+      </div>
+    </div>
+
+    <!-- ប៊ូតុងទាញយករបាយការណ៍សាលាជា PDF និង Excel -->
+    <div class="border-top pt-2">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span class="small fw-bold text-dark">📄 ទាញយករបាយការណ៍សាលា៖</span>
+        <div class="d-flex gap-2">
+          <a id="btnPdf" href="#" target="_blank" class="btn btn-outline-danger btn-sm fw-bold px-3 py-1 text-decoration-none">
+            📕 ទាញយក PDF
+          </a>
+          <a id="btnExcel" href="#" target="_blank" class="btn btn-outline-success btn-sm fw-bold px-3 py-1 text-decoration-none">
+            📗 ទាញយក Excel
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ទម្រង់កត់ត្រាវត្តមាន -->
+  <form id="recordForm" onsubmit="handleFormSubmit(event)">
+    <div class="card border-0 shadow-sm rounded-3 p-3 mb-3 bg-white">
+      
+      <!-- កន្លែង Dropdown ជ្រើសរើសថ្នាក់ + ប៊ូតុងបន្ថែមថ្នាក់ -->
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 p-2 bg-light rounded-3 border gap-2">
+        <div class="d-flex align-items-center gap-1 flex-grow-1">
+          <label class="form-label mb-0 fw-bold text-primary small">🏫 ថ្នាក់៖</label>
+          <select id="classSelector" class="form-select form-select-sm fw-bold text-primary border-primary flex-grow-1" onchange="switchClass(this.value)">
+            <!-- បញ្ជីថ្នាក់ -->
+          </select>
+        </div>
+        <div class="d-flex gap-1">
+          <button type="button" class="btn btn-success btn-sm px-2 fw-bold" onclick="showAddClassModal()">
+            ➕ ថ្នាក់ថ្មី
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm px-2" onclick="navigateClass(-1)">‹</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm px-2" onclick="navigateClass(1)">›</button>
+        </div>
+      </div>
+
+      <!-- បញ្ជីវត្តមានតាមថ្នាក់ -->
+      <div id="classesContainer">
+        <!-- Render ថ្នាក់រៀន -->
+      </div>
+
+      <!-- បរិមាណគ្រឿងឧបភោគប្រើប្រាស់ថ្ងៃនេះ -->
+      <div class="border-top pt-3 mt-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold text-primary mb-0 small">🍲 បរិមាណគ្រឿងឧបភោគថ្ងៃនេះ</h6>
+          <span class="badge bg-success-subtle text-success border small" style="font-size: 10px;">⚡ គណនាស្វ័យប្រវត្តិតាមសិស្សហូប</span>
+        </div>
+        
+        <div class="row g-2">
+          <div class="col-6 col-md-3">
+            <label class="form-label small mb-1 fw-bold">អង្ករ (គ.ក្រ)</label>
+            <input type="number" step="0.001" class="form-control form-control-sm fw-bold text-warning" id="riceInput" value="0">
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small mb-1 fw-bold">ប្រេងឆា (លីត្រ)</label>
+            <input type="number" step="0.001" class="form-control form-control-sm fw-bold text-danger" id="oilInput" value="0">
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small mb-1 fw-bold">គ្រឿងទេស (គ.ក្រ)</label>
+            <input type="number" step="0.001" class="form-control form-control-sm fw-bold text-secondary" id="seasoningInput" value="0">
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small mb-1 fw-bold">មុខម្ហូប / សម្គាល់</label>
+            <input type="text" class="form-control form-control-sm" id="menuNoteInput" placeholder="ឧ. សម្លកកូរ...">
+          </div>
+        </div>
+      </div>
+
+      <div id="statusAlert" class="alert d-none mt-3 py-2 small"></div>
+    </div>
+
+    <!-- ប៊ូតុង រក្សាទុកទិន្នន័យ -->
+    <div class="submit-bar text-center">
+      <button type="submit" id="submitBtn" class="btn btn-primary w-100 py-2 rounded-pill fw-bold fs-6 shadow">
+        💾 រក្សាទុកទិន្នន័យថ្ងៃនេះ
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  // កំណត់ Link Web App API URL (នៅពេល Host លើ GitHub Pages)
+  let GAS_API_URL = localStorage.getItem('thlok_gas_api_url') || '';
+
+  const COOKING_MONTHS = [
+    { id: 11, name: 'ខែវិច្ឆិកា (ខែ១១)', days: 30 },
+    { id: 12, name: 'ខែធ្នូ (ខែ១២)', days: 31 },
+    { id: 1,  name: 'ខែមករា (ខែ០១)', days: 31 },
+    { id: 2,  name: 'ខែកុម្ភៈ (ខែ០២)', days: 29 },
+    { id: 3,  name: 'ខែមីនា (ខែ០៣)', days: 31 },
+    { id: 4,  name: 'ខែមេសា (ខែ០៤)', days: 30 },
+    { id: 5,  name: 'ខែឧសភា (ខែ០៥)', days: 31 },
+    { id: 6,  name: 'ខែមិថុនា (ខែ០៦)', days: 30 },
+    { id: 7,  name: 'ខែកក្កដា (ខែ០៧)', days: 31 },
+    { id: 8,  name: 'ខែសីហា (ខែ០៨)', days: 31 }
+  ];
+
+  let classList = [];
+  let lockedClasses = {};
+  let isEditingManually = false;
+
+  // មុខងារហៅ API (ដំណើរការទាំងលើ Google Apps Script និងលើ GitHub Pages)
+  function callBackend(action, params = {}, method = 'GET') {
+    return new Promise((resolve, reject) => {
+      // ១. បើដំណើរការក្នុង Google Apps Script Web App
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        if (action === 'getInitialData') {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)
+            .getInitialData(params.month, params.day);
+        } else if (action === 'saveDailyRecord') {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)
+            .saveDailyRecord(params);
+        } else if (action === 'addNewClass') {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)
+            .addNewClassToSystem(params.className);
+        }
+        return;
+      }
+
+      // ២. បើដំណើរការលើ GitHub Pages (ប្រើ fetch API)
+      if (!GAS_API_URL) {
+        configureGasUrl();
+        reject(new Error("សូមបញ្ចូល Google Apps Script Web App URL ជាមុនសិន!"));
+        return;
+      }
+
+      if (method === 'GET') {
+        const query = new URLSearchParams({ action, ...params }).toString();
+        fetch(`${GAS_API_URL}?${query}`)
+          .then(r => r.json())
+          .then(resolve)
+          .catch(reject);
+      } else {
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action, data: params })
+        })
+          .then(r => r.json())
+          .then(resolve)
+          .catch(reject);
+      }
+    });
+  }
+
+  function configureGasUrl() {
+    const current = GAS_API_URL || '';
+    const input = prompt("សូមបញ្ចូល Web App URL របស់ Google Apps Script (https://script.google.com/macros/s/.../exec)៖", current);
+    if (input !== null && input.trim()) {
+      GAS_API_URL = input.trim();
+      localStorage.setItem('thlok_gas_api_url', GAS_API_URL);
+      alert("បានកំណត់ API URL រួចរាល់!");
+      fetchData();
+    }
+  }
+
+  window.addEventListener('load', () => {
+    initMonthAndDayPickers();
+    fetchData();
+
+    setInterval(() => {
+      if (!isEditingManually) {
+        fetchData(true);
+      }
+    }, 30000);
+  });
+
+  function initMonthAndDayPickers() {
+    const monthSelect = document.getElementById('selectedMonth');
+    const now = new Date();
+    const currentMonthNum = now.getMonth() + 1;
+    
+    monthSelect.innerHTML = COOKING_MONTHS.map(m => 
+      `<option value="${m.id}" ${m.id === currentMonthNum ? 'selected' : ''}>${m.name}</option>`
+    ).join('');
+
+    if (!COOKING_MONTHS.some(m => m.id === currentMonthNum)) {
+      monthSelect.value = 11;
+    }
+
+    updateDaysDropdown();
+    document.getElementById('selectedDay').value = Math.min(now.getDate(), 30);
+  }
+
+  function updateDaysDropdown() {
+    const monthId = parseInt(document.getElementById('selectedMonth').value);
+    const monthObj = COOKING_MONTHS.find(m => m.id === monthId) || { days: 31 };
+    const daySelect = document.getElementById('selectedDay');
+    const prevDay = parseInt(daySelect.value) || 1;
+
+    daySelect.innerHTML = '';
+    for (let i = 1; i <= monthObj.days; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.text = 'ថ្ងៃទី ' + i;
+      daySelect.appendChild(opt);
+    }
+    daySelect.value = Math.min(prevDay, monthObj.days);
+  }
+
+  function onMonthChange() {
+    updateDaysDropdown();
+    fetchData();
+  }
+
+  function onDayChange() {
+    fetchData();
+  }
+
+  function fetchData(isSilent = false) {
+    const m = document.getElementById('selectedMonth').value;
+    const d = document.getElementById('selectedDay').value;
+    
+    if (!isSilent) {
+      document.getElementById('activeDateBadge').innerText = `ទាញទិន្នន័យ ថ្ងៃទី ${d} / ខែ ${m}...`;
+    }
+
+    const mObj = COOKING_MONTHS.find(x => x.id == m);
+    document.getElementById('monthSummaryLabel').innerText = mObj ? mObj.name : '';
+
+    callBackend('getInitialData', { month: m, day: d }, 'GET')
+      .then(populateData)
+      .catch(err => {
+        document.getElementById('activeDateBadge').innerText = `ថ្ងៃទី ${d} / ខែ ${m} (មានបញ្ហា)`;
+        console.error(err);
+      });
+  }
+
+  function showAddClassModal() {
+    const name = prompt("សូមបញ្ចូលឈ្មោះថ្នាក់ថ្មី (ឧ. ថ្នាក់ទី១ ក)៖");
+    if (name && name.trim()) {
+      const cleanName = name.trim();
+      const btn = document.querySelector('button[onclick="showAddClassModal()"]');
+      if (btn) btn.innerText = 'កំពុងបន្ថែម...';
+
+      callBackend('addNewClass', { className: cleanName }, 'POST')
+        .then(res => {
+          if (btn) btn.innerText = '➕ ថ្នាក់ថ្មី';
+          if (res.success) {
+            classList = res.classList;
+            renderClasses();
+            document.getElementById('classSelector').value = res.newKey;
+            switchClass(res.newKey);
+            alert(`បានបន្ថែម "${cleanName}" ជាប់ក្នុងប្រព័ន្ធដោយជោគជ័យ!`);
+          } else {
+            alert('មានបញ្ហាក្នុងការបន្ថែមថ្នាក់៖ ' + res.message);
+          }
+        })
+        .catch(err => {
+          if (btn) btn.innerText = '➕ ថ្នាក់ថ្មី';
+          alert('បរាជ័យ៖ ' + err.toString());
+        });
+    }
+  }
+
+  function renderClasses() {
+    if (!classList || classList.length === 0) return;
+    const selector = document.getElementById('classSelector');
+    const currentVal = selector.value || classList[0].key;
+    
+    selector.innerHTML = classList.map(c => `<option value="${c.key}">${c.name}</option>`).join('')
+      + `<option value="all">-- បង្ហាញគ្រប់ថ្នាក់ទាំងអស់ --</option>`;
+
+    const container = document.getElementById('classesContainer');
+    container.innerHTML = classList.map(c => `
+      <div class="col-12 class-item" id="box_${c.key}">
+        <div class="class-box" id="card_${c.key}">
+          <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+            <span class="fw-bold text-primary fs-6">🏫 ${c.name}</span>
+            <div class="d-flex align-items-center gap-1">
+              <span class="badge bg-secondary small" id="badge_${c.key}">មិនទាន់បញ្ចូល</span>
+              <button type="button" class="btn btn-outline-warning btn-sm py-0 px-2 d-none" id="unlockBtn_${c.key}" onclick="unlockClass('${c.key}')" style="font-size:11px;">
+                🔓 កែប្រែ
+              </button>
+            </div>
+          </div>
+          
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="small text-muted fw-bold d-block mb-1" style="font-size:12px;">ស.ស (វត្តមានសរុប)</label>
+              <div class="input-group input-group-sm">
+                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_att', -1)">−</button>
+                <input type="number" id="${c.key}_att" class="form-control input-count" value="0" min="0" oninput="handleStudentInputChange()">
+                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_att', 1)">+</button>
+              </div>
+            </div>
+            <div class="col-6">
+              <label class="small text-muted fw-bold d-block mb-1" style="font-size:12px;">ស.ស្រី (វត្តមានស្រី)</label>
+              <div class="input-group input-group-sm">
+                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_fAtt', -1)">−</button>
+                <input type="number" id="${c.key}_fAtt" class="form-control input-count" value="0" min="0" oninput="handleStudentInputChange()">
+                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_fAtt', 1)">+</button>
+              </div>
+            </div>
+            <div class="col-6">
+              <label class="small text-muted fw-bold d-block mb-1" style="font-size:12px;">ស.ហូប (ហូបសរុប)</label>
+              <div class="input-group input-group-sm">
+                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_eat', -1)">−</button>
+                <input type="number" id="${c.key}_eat" class="form-control input-count" value="0" min="0" oninput="handleStudentInputChange()">
+                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_eat', 1)">+</button>
+              </div>
+            </div>
+            <div class="col-6">
+              <label class="small text-muted fw-bold d-block mb-1" style="font-size:12px;">ហ.ស្រី (ហូបស្រី)</label>
+              <div class="input-group input-group-sm">
+                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_fEat', -1)">−</button>
+                <input type="number" id="${c.key}_fEat" class="form-control input-count" value="0" min="0" oninput="handleStudentInputChange()">
+                <button type="button" class="btn btn-outline-secondary btn-stepper" onclick="stepVal('${c.key}_fEat', 1)">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    selector.value = currentVal;
+    switchClass(currentVal);
+  }
+
+  function switchClass(selectedKey) {
+    classList.forEach(c => {
+      const el = document.getElementById(`box_${c.key}`);
+      if (el) {
+        el.style.display = (selectedKey === 'all' || c.key === selectedKey) ? 'block' : 'none';
+      }
+    });
+  }
+
+  function navigateClass(direction) {
+    const selector = document.getElementById('classSelector');
+    let currentIndex = classList.findIndex(c => c.key === selector.value);
+    if (currentIndex === -1) currentIndex = 0;
+    
+    let nextIndex = currentIndex + direction;
+    if (nextIndex < 0) nextIndex = classList.length - 1;
+    if (nextIndex >= classList.length) nextIndex = 0;
+
+    selector.value = classList[nextIndex].key;
+    switchClass(classList[nextIndex].key);
+  }
+
+  function stepVal(id, delta) {
+    const el = document.getElementById(id);
+    if (el.disabled) return;
+    let val = parseInt(el.value) || 0;
+    val = Math.max(0, val + delta);
+    el.value = val;
+    handleStudentInputChange();
+  }
+
+  function handleStudentInputChange() {
+    isEditingManually = true;
+    recalculateTotalsAndIngredients();
+  }
+
+  function recalculateTotalsAndIngredients() {
+    let sumAtt = 0, sumFAtt = 0, sumEat = 0, sumFEat = 0;
+
+    classList.forEach(c => {
+      const att = parseInt(document.getElementById(`${c.key}_att`)?.value) || 0;
+      const fAtt = parseInt(document.getElementById(`${c.key}_fAtt`)?.value) || 0;
+      const eat = parseInt(document.getElementById(`${c.key}_eat`)?.value) || 0;
+      const fEat = parseInt(document.getElementById(`${c.key}_fEat`)?.value) || 0;
+
+      sumAtt += att;
+      sumFAtt += fAtt;
+      sumEat += eat;
+      sumFEat += fEat;
+    });
+
+    document.getElementById('dispTodayAttend').innerText = sumAtt;
+    document.getElementById('dispTodayAttendF').innerText = `(ស្រី ${sumFAtt})`;
+    document.getElementById('dispTodayEat').innerText = sumEat;
+    document.getElementById('dispTodayEatF').innerText = `(ស្រី ${sumFEat})`;
+
+    const rate = sumAtt > 0 ? Math.round((sumEat / sumAtt) * 100) : 0;
+    document.getElementById('dispRate').innerText = rate + '%';
+
+    const calcRice = Number((sumEat * 0.115).toFixed(3));
+    const calcOil = Number((sumEat * 0.005).toFixed(3));
+    const calcSeasoning = Number((sumEat * 0.001).toFixed(3));
+
+    document.getElementById('dispTodayRice').innerText = calcRice;
+    document.getElementById('dispTodayOil').innerText = calcOil;
+    document.getElementById('dispTodaySeasoning').innerText = calcSeasoning;
+
+    document.getElementById('riceInput').value = calcRice;
+    document.getElementById('oilInput').value = calcOil;
+    document.getElementById('seasoningInput').value = calcSeasoning;
+  }
+
+  function lockClass(key) {
+    lockedClasses[key] = true;
+    const card = document.getElementById(`card_${key}`);
+    const badge = document.getElementById(`badge_${key}`);
+    const unlockBtn = document.getElementById(`unlockBtn_${key}`);
+
+    if (card) card.classList.add('is-locked');
+    if (badge) {
+      badge.className = 'badge bg-success small';
+      badge.innerText = '🔒 រួចរាល់';
+    }
+    if (unlockBtn) unlockBtn.classList.remove('d-none');
+
+    ['att', 'fAtt', 'eat', 'fEat'].forEach(type => {
+      const input = document.getElementById(`${key}_${type}`);
+      if (input) input.disabled = true;
+    });
+    if (card) {
+      card.querySelectorAll('.btn-stepper').forEach(b => b.disabled = true);
+    }
+  }
+
+  function unlockClass(key) {
+    if (confirm("តើលោកគ្រូ/អ្នកគ្រូចង់កែសម្រួលទិន្នន័យថ្នាក់នេះឡើងវិញមែនទេ?")) {
+      lockedClasses[key] = false;
+      const card = document.getElementById(`card_${key}`);
+      const badge = document.getElementById(`badge_${key}`);
+      const unlockBtn = document.getElementById(`unlockBtn_${key}`);
+
+      if (card) card.classList.remove('is-locked');
+      if (badge) {
+        badge.className = 'badge bg-warning text-dark small';
+        badge.innerText = '📝 កំពុងកែ';
+      }
+      if (unlockBtn) unlockBtn.classList.add('d-none');
+
+      ['att', 'fAtt', 'eat', 'fEat'].forEach(type => {
+        const input = document.getElementById(`${key}_${type}`);
+        if (input) input.disabled = false;
+      });
+      if (card) {
+        card.querySelectorAll('.btn-stepper').forEach(b => b.disabled = false);
+      }
+      isEditingManually = true;
+    }
+  }
+
+  function resetAllClassInputs() {
+    classList.forEach(c => {
+      ['att', 'fAtt', 'eat', 'fEat'].forEach(type => {
+        const input = document.getElementById(`${c.key}_${type}`);
+        if (input) {
+          input.value = 0;
+          input.disabled = false;
+        }
+      });
+      const card = document.getElementById(`card_${c.key}`);
+      if (card) {
+        card.classList.remove('is-locked');
+        card.querySelectorAll('.btn-stepper').forEach(b => b.disabled = false);
+      }
+      const badge = document.getElementById(`badge_${c.key}`);
+      if (badge) {
+        badge.className = 'badge bg-secondary small';
+        badge.innerText = 'មិនទាន់បញ្ចូល';
+      }
+      const unlockBtn = document.getElementById(`unlockBtn_${c.key}`);
+      if (unlockBtn) unlockBtn.classList.add('d-none');
+    });
+  }
+
+  function populateData(res) {
+    isEditingManually = false;
+    document.getElementById('activeDateBadge').innerText = `ថ្ងៃទី ${res.day} / ខែ ${res.month}`;
+
+    if (res.classList && res.classList.length > 0) {
+      classList = res.classList;
+      renderClasses();
+    }
+
+    resetAllClassInputs();
+
+    // Link ទាញយកឯកសារ PDF និង Excel ផ្ទាល់
+    const ssId = res.spreadsheetId;
+    const gid = res.schoolSheetGid;
+    if (ssId && gid !== undefined) {
+      document.getElementById('btnPdf').href = 
+        `https://docs.google.com/spreadsheets/d/${ssId}/export?exportFormat=pdf&format=pdf&gid=${gid}&size=A4&portrait=false&fitw=true&gridlines=true&printtitle=false&sheetnames=false&fzr=false`;
+      
+      document.getElementById('btnExcel').href = 
+        `https://docs.google.com/spreadsheets/d/${ssId}/export?format=xlsx&gid=${gid}`;
+    }
+
+    // សង្ខេបប្រចាំខែ
+    document.getElementById('dispRecDays').innerText = `កត់ត្រា ${res.monthSummary.recordedDays} ថ្ងៃ`;
+    document.getElementById('dispAvgStudents').innerText = res.monthSummary.avgStudents + ' នាក់';
+    document.getElementById('dispMonthRice').innerText = res.monthSummary.totalRice + ' Kg';
+    document.getElementById('dispMonthOil').innerText = res.monthSummary.totalOil + ' L';
+    document.getElementById('dispMonthSeasoning').innerText = res.monthSummary.totalSeasoning + ' Kg';
+    
+    // សង្ខេបប្រចាំថ្ងៃនេះ
+    const t = res.todayData;
+    document.getElementById('dispTodayAttend').innerText = t.totalAttend;
+    document.getElementById('dispTodayAttendF').innerText = `(ស្រី ${t.femaleAttend})`;
+    document.getElementById('dispTodayEat').innerText = t.totalEat;
+    document.getElementById('dispTodayEatF').innerText = `(ស្រី ${t.femaleEat})`;
+
+    const rate = t.totalAttend > 0 ? Math.round((t.totalEat / t.totalAttend) * 100) : 0;
+    document.getElementById('dispRate').innerText = rate + '%';
+
+    document.getElementById('dispTodayRice').innerText = t.riceToday;
+    document.getElementById('dispTodayOil').innerText = t.oilToday;
+    document.getElementById('dispTodaySeasoning').innerText = t.saltToday;
+
+    document.getElementById('riceInput').value = t.riceToday;
+    document.getElementById('oilInput').value = t.oilToday;
+    document.getElementById('seasoningInput').value = t.saltToday;
+    document.getElementById('menuNoteInput').value = t.menu || '';
+
+    // បំពេញទិន្នន័យតាមថ្នាក់នីមួយៗ
+    const todayRow = t.totalClassData;
+    if (todayRow && todayRow.length >= 5) {
+      classList.forEach((c, idx) => {
+        const base = 1 + (idx * 4);
+        if (todayRow.length > base + 3) {
+          const att = Number(todayRow[base]) || 0;
+          const fAtt = Number(todayRow[base + 1]) || 0;
+          const eat = Number(todayRow[base + 2]) || 0;
+          const fEat = Number(todayRow[base + 3]) || 0;
+
+          document.getElementById(`${c.key}_att`).value = att;
+          document.getElementById(`${c.key}_fAtt`).value = fAtt;
+          document.getElementById(`${c.key}_eat`).value = eat;
+          document.getElementById(`${c.key}_fEat`).value = fEat;
+
+          if (att > 0 || eat > 0) {
+            lockClass(c.key);
+          }
+        }
+      });
+    }
+  }
+
+  function handleFormSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const alertBox = document.getElementById('statusAlert');
+    btn.disabled = true;
+    btn.innerText = 'កំពុងរក្សាទុក...';
+
+    const payload = {
+      month: document.getElementById('selectedMonth').value,
+      day: document.getElementById('selectedDay').value,
+      cookRice: true,
+      rice: document.getElementById('riceInput').value,
+      oil: document.getElementById('oilInput').value,
+      seasoning: document.getElementById('seasoningInput').value,
+      menuNote: document.getElementById('menuNoteInput').value,
+      classList: classList,
+      classes: {}
+    };
+
+    classList.forEach(c => {
+      payload.classes[c.key] = {
+        attend: document.getElementById(`${c.key}_att`).value,
+        femaleAttend: document.getElementById(`${c.key}_fAtt`).value,
+        eat: document.getElementById(`${c.key}_eat`).value,
+        femaleEat: document.getElementById(`${c.key}_fEat`).value
+      };
+    });
+
+    callBackend('saveDailyRecord', payload, 'POST')
+      .then(res => {
+        btn.disabled = false;
+        btn.innerText = '💾 រក្សាទុកទិន្នន័យថ្ងៃនេះ';
+        alertBox.className = 'alert ' + (res.success ? 'alert-success' : 'alert-danger');
+        alertBox.innerText = res.message;
+        alertBox.classList.remove('d-none');
+        if (res.success) {
+          fetchData();
+        }
+      })
+      .catch(err => {
+        btn.disabled = false;
+        btn.innerText = '💾 រក្សាទុកទិន្នន័យថ្ងៃនេះ';
+        alertBox.className = 'alert alert-danger';
+        alertBox.innerText = 'មានបញ្ហាក្នុងការរក្សាទុក៖ ' + err.toString();
+        alertBox.classList.remove('d-none');
+      });
+  }
+</script>
+</body>
+</html>
