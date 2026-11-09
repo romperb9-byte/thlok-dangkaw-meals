@@ -16,12 +16,12 @@ function doGet(e) {
     return handleApiGet(e);
   }
 
-  // ប្រសិនបើបើកផ្ទាល់ក្នុង Google Apps Script Web App
-  return HtmlService.createTemplateFromFile('Index')
-    .evaluate()
-    .setTitle('ប្រព័ន្ធកត់ត្រាវត្តមាន និងអាហារសិស្ស - សាលាបឋមសិក្សាថ្លុកដង្កោ')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+  // ប្រសិនបើបើកផ្ទាល់ក្នុង Browser បញ្ជូនទៅកាន់ GitHub Pages ដោយស្វ័យប្រវត្តិ
+  return HtmlService.createHtmlOutput(
+    '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=https://romperb9-byte.github.io/thlok-dangkaw-meals/"><script>window.location.replace("https://romperb9-byte.github.io/thlok-dangkaw-meals/");</script></head><body><div style="font-family:sans-serif;text-align:center;padding:50px;">កំពុងបញ្ជូនទៅកាន់ប្រព័ន្ធ... សូមរង់ចាំបន្តិច <br><br><a href="https://romperb9-byte.github.io/thlok-dangkaw-meals/">ចុចត្រង់នេះ ប្រសិនបើមិនដំណើរការស្វ័យប្រវត្តិ</a></div></body></html>'
+  ).setTitle('ប្រព័ន្ធកត់ត្រាវត្តមាន និងអាហារសិស្ស - សាលាបឋមសិក្សាថ្លុកដង្កោ')
+   .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+   .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
 }
 
 function doPost(e) {
@@ -271,6 +271,12 @@ function getInitialData(month, day) {
     // ករណី Sheet មាន ៨ ថ្នាក់ឡើងទៅ
     classList.forEach((c, idx) => {
       const base = 1 + (idx * 4);
+      // Col 33 (index 33, Col AH) ជាជួរឈរសរុប (Total) មិនត្រូវយកមកអានជាថ្នាក់រៀនទេ
+      if (idx >= 8 && base >= 33) {
+        classDataMap[c.key] = { attend: 0, femaleAttend: 0, eat: 0, femaleEat: 0 };
+        return;
+      }
+
       if (todayClassData.length > base + 3) {
         const att = Number(todayClassData[base]) || 0;
         const fAtt = Number(todayClassData[base + 1]) || 0;
