@@ -329,7 +329,18 @@
     { id: 8,  name: 'ខែសីហា (ខែ០៨)', days: 31 }
   ];
 
-  let classList = [];
+  const defaultClassList = [
+    { key: 'kindergarten_mid', name: 'ថ្នាក់មត្តេយ្យមធ្យម' },
+    { key: 'kindergarten_high', name: 'ថ្នាក់មត្តេយ្យខ្ពស់' },
+    { key: 'grade1', name: 'ថ្នាក់ទី១' },
+    { key: 'grade2', name: 'ថ្នាក់ទី២' },
+    { key: 'grade3', name: 'ថ្នាក់ទី៣' },
+    { key: 'grade4', name: 'ថ្នាក់ទី៤' },
+    { key: 'grade5', name: 'ថ្នាក់ទី៥' },
+    { key: 'grade6', name: 'ថ្នាក់ទី៦' }
+  ];
+
+  let classList = [...defaultClassList];
   let lockedClasses = {};
   let isEditingManually = false;
 
@@ -408,6 +419,7 @@
 
   window.addEventListener('load', () => {
     initMonthAndDayPickers();
+    renderClasses();
     fetchData();
 
     setInterval(() => {
