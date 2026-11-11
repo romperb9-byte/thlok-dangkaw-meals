@@ -389,6 +389,8 @@
     '2026-06-18': 'ព្រះរាជពិធីបុណ្យចម្រើនព្រះជន្ម សម្តេចម៉ែ'
   };
 
+  const KHMER_DAY_NAMES = ['អាទិត្យ', 'ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
+
   function getAcademicYear(monthId) {
     return (monthId >= 9) ? 2025 : 2026;
   }
@@ -396,7 +398,9 @@
   function getDayOffInfo(monthId, day) {
     const year = getAcademicYear(monthId);
     const dateObj = new Date(year, monthId - 1, day);
-    const isSunday = (dateObj.getDay() === 0);
+    const dayOfWeek = dateObj.getDay();
+    const isSunday = (dayOfWeek === 0);
+    const dayName = KHMER_DAY_NAMES[dayOfWeek];
 
     const padM = monthId < 10 ? '0' + monthId : String(monthId);
     const padD = day < 10 ? '0' + day : String(day);
@@ -405,13 +409,13 @@
     const holidayName = KHMER_PUBLIC_HOLIDAYS[dateKey];
 
     if (isSunday && holidayName) {
-      return { isDayOff: true, reason: `អាទិត្យ & ${holidayName}` };
+      return { isDayOff: true, reason: `អាទិត្យ & ${holidayName}`, dayName };
     } else if (isSunday) {
-      return { isDayOff: true, reason: 'ថ្ងៃអាទិត្យ' };
+      return { isDayOff: true, reason: 'ថ្ងៃអាទិត្យ', dayName };
     } else if (holidayName) {
-      return { isDayOff: true, reason: holidayName };
+      return { isDayOff: true, reason: holidayName, dayName };
     }
-    return { isDayOff: false, reason: '' };
+    return { isDayOff: false, reason: '', dayName };
   }
 
   const defaultClassList = [
@@ -596,11 +600,15 @@
 
       if (dayOff.isDayOff) {
         opt.disabled = true;
-        opt.text = `ថ្ងៃទី ${i} (🚫 ${dayOff.reason} ឈប់)`;
+        if (dayOff.reason.includes('អាទិត្យ')) {
+          opt.text = `ថ្ងៃទី ${i} (🚫 ${dayOff.reason} ឈប់)`;
+        } else {
+          opt.text = `ថ្ងៃទី ${i} (🚫 ${dayOff.dayName}: ${dayOff.reason} ឈប់)`;
+        }
         opt.style.color = '#dc2626';
         opt.style.fontWeight = 'normal';
       } else {
-        opt.text = `ថ្ងៃទី ${i}`;
+        opt.text = `ថ្ងៃទី ${i} (${dayOff.dayName})`;
         opt.style.fontWeight = 'bold';
         if (!firstValidDay) firstValidDay = i;
         if (i === prevDay) isPrevDayValid = true;
@@ -635,7 +643,7 @@
       if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.className = 'btn btn-primary w-100 py-2 rounded-pill fw-bold fs-6 shadow';
-        submitBtn.innerText = '💾 រក្សាទុកទិន្នន័យថ្ងៃនេះ';
+        submitBtn.innerText = `💾 រក្សាទុកទិន្នន័យ (ថ្ងៃ${dayOff.dayName} ទី ${d})`;
       }
     }
   }
@@ -664,7 +672,8 @@
     const d = document.getElementById('selectedDay').value;
     
     if (!isSilent) {
-      document.getElementById('activeDateBadge').innerText = `ទាញទិន្នន័យ ថ្ងៃទី ${d} / ខែ ${m}...`;
+      const dayInfo = getDayOffInfo(parseInt(m), parseInt(d));
+      document.getElementById('activeDateBadge').innerText = `ទាញទិន្នន័យ ថ្ងៃ${dayInfo.dayName} ទី ${d} / ខែ ${m}...`;
     }
 
     const mObj = COOKING_MONTHS.find(x => x.id == m);
@@ -891,7 +900,8 @@
 
   function populateData(res) {
     isEditingManually = false;
-    document.getElementById('activeDateBadge').innerText = `ថ្ងៃទី ${res.day} / ខែ ${res.month}`;
+    const dayInfo = getDayOffInfo(parseInt(res.month), parseInt(res.day));
+    document.getElementById('activeDateBadge').innerText = `ថ្ងៃ${dayInfo.dayName} ទី ${res.day} / ខែ ${res.month}`;
 
     if (res.classList && res.classList.length > 0) {
       classList = res.classList;

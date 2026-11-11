@@ -501,6 +501,8 @@ const KHMER_PUBLIC_HOLIDAYS = {
   '2026-06-18': 'ព្រះរាជពិធីបុណ្យចម្រើនព្រះជន្ម សម្តេចម៉ែ'
 };
 
+const KHMER_DAY_NAMES = ['អាទិត្យ', 'ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
+
 function getAcademicYear(monthId) {
   return (monthId >= 9) ? 2025 : 2026;
 }
@@ -508,7 +510,9 @@ function getAcademicYear(monthId) {
 function getDayOffInfo(monthId, day) {
   const year = getAcademicYear(monthId);
   const dateObj = new Date(year, monthId - 1, day);
-  const isSunday = (dateObj.getDay() === 0);
+  const dayOfWeek = dateObj.getDay();
+  const isSunday = (dayOfWeek === 0);
+  const dayName = KHMER_DAY_NAMES[dayOfWeek];
 
   const padM = monthId < 10 ? '0' + monthId : String(monthId);
   const padD = day < 10 ? '0' + day : String(day);
@@ -517,13 +521,13 @@ function getDayOffInfo(monthId, day) {
   const holidayName = KHMER_PUBLIC_HOLIDAYS[dateKey];
 
   if (isSunday && holidayName) {
-    return { isDayOff: true, reason: `អាទិត្យ & ${holidayName}` };
+    return { isDayOff: true, reason: `អាទិត្យ & ${holidayName}`, dayName: dayName };
   } else if (isSunday) {
-    return { isDayOff: true, reason: 'ថ្ងៃអាទិត្យ' };
+    return { isDayOff: true, reason: 'ថ្ងៃអាទិត្យ', dayName: dayName };
   } else if (holidayName) {
-    return { isDayOff: true, reason: holidayName };
+    return { isDayOff: true, reason: holidayName, dayName: dayName };
   }
-  return { isDayOff: false, reason: '' };
+  return { isDayOff: false, reason: '', dayName: dayName };
 }
 
 // រក្សាទុកទិន្នន័យប្រចាំថ្ងៃចូលក្នុង Google Sheets
@@ -535,7 +539,7 @@ function saveDailyRecord(data) {
 
     const dayOff = getDayOffInfo(m, d);
     if (dayOff.isDayOff) {
-      return { success: false, message: `មិនអាចរក្សាទុកបានទេ ព្រោះថ្ងៃទី ${d} ខែ ${m} ត្រូវនឹង ${dayOff.reason} (ថ្ងៃឈប់សម្រាក)!` };
+      return { success: false, message: `មិនអាចរក្សាទុកបានទេ ព្រោះថ្ងៃ${dayOff.dayName} ទី ${d} ខែ ${m} ត្រូវនឹង ${dayOff.reason} (ថ្ងៃឈប់សម្រាក)!` };
     }
 
     const sheetClass = getSheetForMonth(ss, 'class', m);
