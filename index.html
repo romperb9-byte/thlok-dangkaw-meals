@@ -366,6 +366,54 @@
     { id: 8,  name: 'ខែសីហា (ខែ០៨)', days: 31 }
   ];
 
+  // បញ្ជីថ្ងៃឈប់សម្រាកបុណ្យជាតិកម្ពុជា (យោងតាម khmer-lunar-calendar.com)
+  // សម្រាប់ឆ្នាំសិក្សា ២០២៥-២០២៦ (១០ ខែសម្រាប់ចម្អិនអាហារ)
+  const KHMER_PUBLIC_HOLIDAYS = {
+    // ឆ្នាំ ២០២៥
+    '2025-11-04': 'បុណ្យអុំទូក',
+    '2025-11-05': 'បុណ្យអុំទូក',
+    '2025-11-06': 'បុណ្យអុំទូក',
+    '2025-11-09': 'បុណ្យឯករាជ្យជាតិ',
+    '2025-12-29': 'ទិវាសន្តិភាពនៅកម្ពុជា',
+
+    // ឆ្នាំ ២០២៦
+    '2026-01-01': 'ទិវាចូលឆ្នាំសកល',
+    '2026-01-07': 'ទិវាជ័យជម្នះលើរបបប្រល័យពូជសាសន៍',
+    '2026-03-08': 'ទិវានារីអន្តរជាតិ',
+    '2026-04-14': 'ចូលឆ្នាំថ្មីប្រពៃណីជាតិ',
+    '2026-04-15': 'ចូលឆ្នាំថ្មីប្រពៃណីជាតិ',
+    '2026-04-16': 'ចូលឆ្នាំថ្មីប្រពៃណីជាតិ',
+    '2026-05-01': 'ទិវាពលកម្មអន្តរជាតិ & វិសាខបូជា',
+    '2026-05-05': 'ព្រះរាជពិធីច្រត់ព្រះនង្គ័ល',
+    '2026-05-14': 'ព្រះរាជពិធីបុណ្យចម្រើនព្រះជន្ម ព្រះមហាក្សត្រ',
+    '2026-06-18': 'ព្រះរាជពិធីបុណ្យចម្រើនព្រះជន្ម សម្តេចម៉ែ'
+  };
+
+  function getAcademicYear(monthId) {
+    return (monthId >= 9) ? 2025 : 2026;
+  }
+
+  function getDayOffInfo(monthId, day) {
+    const year = getAcademicYear(monthId);
+    const dateObj = new Date(year, monthId - 1, day);
+    const isSunday = (dateObj.getDay() === 0);
+
+    const padM = monthId < 10 ? '0' + monthId : String(monthId);
+    const padD = day < 10 ? '0' + day : String(day);
+    const dateKey = `${year}-${padM}-${padD}`;
+
+    const holidayName = KHMER_PUBLIC_HOLIDAYS[dateKey];
+
+    if (isSunday && holidayName) {
+      return { isDayOff: true, reason: `អាទិត្យ & ${holidayName}` };
+    } else if (isSunday) {
+      return { isDayOff: true, reason: 'ថ្ងៃអាទិត្យ' };
+    } else if (holidayName) {
+      return { isDayOff: true, reason: holidayName };
+    }
+    return { isDayOff: false, reason: '' };
+  }
+
   const defaultClassList = [
     { key: 'kindergarten_mid', name: 'ថ្នាក់មត្តេយ្យមធ្យម' },
     { key: 'kindergarten_high', name: 'ថ្នាក់មត្តេយ្យខ្ពស់' },
@@ -538,13 +586,58 @@
     const prevDay = parseInt(daySelect.value) || 1;
 
     daySelect.innerHTML = '';
+    let firstValidDay = null;
+    let isPrevDayValid = false;
+
     for (let i = 1; i <= monthObj.days; i++) {
+      const dayOff = getDayOffInfo(monthId, i);
       const opt = document.createElement('option');
       opt.value = i;
-      opt.text = 'ថ្ងៃទី ' + i;
+
+      if (dayOff.isDayOff) {
+        opt.disabled = true;
+        opt.text = `ថ្ងៃទី ${i} (🚫 ${dayOff.reason} ឈប់)`;
+        opt.style.color = '#dc2626';
+        opt.style.fontWeight = 'normal';
+      } else {
+        opt.text = `ថ្ងៃទី ${i}`;
+        opt.style.fontWeight = 'bold';
+        if (!firstValidDay) firstValidDay = i;
+        if (i === prevDay) isPrevDayValid = true;
+      }
       daySelect.appendChild(opt);
     }
-    daySelect.value = Math.min(prevDay, monthObj.days);
+
+    if (isPrevDayValid) {
+      daySelect.value = prevDay;
+    } else if (firstValidDay) {
+      daySelect.value = firstValidDay;
+    } else {
+      daySelect.value = 1;
+    }
+
+    updateDayOffBadge();
+  }
+
+  function updateDayOffBadge() {
+    const m = parseInt(document.getElementById('selectedMonth').value);
+    const d = parseInt(document.getElementById('selectedDay').value);
+    const dayOff = getDayOffInfo(m, d);
+    const submitBtn = document.getElementById('submitBtn');
+
+    if (dayOff.isDayOff) {
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.className = 'btn btn-secondary w-100 py-2 rounded-pill fw-bold fs-6 shadow';
+        submitBtn.innerText = `🚫 ថ្ងៃឈប់សម្រាក (${dayOff.reason}) មិនមានចម្អិនអាហារឡើយ`;
+      }
+    } else {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.className = 'btn btn-primary w-100 py-2 rounded-pill fw-bold fs-6 shadow';
+        submitBtn.innerText = '💾 រក្សាទុកទិន្នន័យថ្ងៃនេះ';
+      }
+    }
   }
 
   function onMonthChange() {
@@ -562,6 +655,7 @@
   }
 
   function onDayChange() {
+    updateDayOffBadge();
     fetchData();
   }
 
@@ -903,6 +997,15 @@
 
   function handleFormSubmit(e) {
     e.preventDefault();
+    const m = parseInt(document.getElementById('selectedMonth').value);
+    const d = parseInt(document.getElementById('selectedDay').value);
+    const dayOff = getDayOffInfo(m, d);
+
+    if (dayOff.isDayOff) {
+      alert(`❌ មិនអាចរក្សាទុកបានទេ! ថ្ងៃទី ${d} ខែ ${m} ត្រូវនឹង ${dayOff.reason} (ថ្ងៃឈប់សម្រាក/ថ្ងៃអាទិត្យ) មិនមានការចម្អិនអាហារឡើយ។`);
+      return;
+    }
+
     const btn = document.getElementById('submitBtn');
     const alertBox = document.getElementById('statusAlert');
     btn.disabled = true;

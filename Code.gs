@@ -418,12 +418,64 @@ function getInitialData(month, day) {
   };
 }
 
+// បញ្ជីថ្ងៃឈប់សម្រាកបុណ្យជាតិកម្ពុជា (យោងតាម khmer-lunar-calendar.com)
+const KHMER_PUBLIC_HOLIDAYS = {
+  // ឆ្នាំ ២០២៥
+  '2025-11-04': 'បុណ្យអុំទូក',
+  '2025-11-05': 'បុណ្យអុំទូក',
+  '2025-11-06': 'បុណ្យអុំទូក',
+  '2025-11-09': 'បុណ្យឯករាជ្យជាតិ',
+  '2025-12-29': 'ទិវាសន្តិភាពនៅកម្ពុជា',
+
+  // ឆ្នាំ ២០២៦
+  '2026-01-01': 'ទិវាចូលឆ្នាំសកល',
+  '2026-01-07': 'ទិវាជ័យជម្នះលើរបបប្រល័យពូជសាសន៍',
+  '2026-03-08': 'ទិវានារីអន្តរជាតិ',
+  '2026-04-14': 'ចូលឆ្នាំថ្មីប្រពៃណីជាតិ',
+  '2026-04-15': 'ចូលឆ្នាំថ្មីប្រពៃណីជាតិ',
+  '2026-04-16': 'ចូលឆ្នាំថ្មីប្រពៃណីជាតិ',
+  '2026-05-01': 'ទិវាពលកម្មអន្តរជាតិ & វិសាខបូជា',
+  '2026-05-05': 'ព្រះរាជពិធីច្រត់ព្រះនង្គ័ល',
+  '2026-05-14': 'ព្រះរាជពិធីបុណ្យចម្រើនព្រះជន្ម ព្រះមហាក្សត្រ',
+  '2026-06-18': 'ព្រះរាជពិធីបុណ្យចម្រើនព្រះជន្ម សម្តេចម៉ែ'
+};
+
+function getAcademicYear(monthId) {
+  return (monthId >= 9) ? 2025 : 2026;
+}
+
+function getDayOffInfo(monthId, day) {
+  const year = getAcademicYear(monthId);
+  const dateObj = new Date(year, monthId - 1, day);
+  const isSunday = (dateObj.getDay() === 0);
+
+  const padM = monthId < 10 ? '0' + monthId : String(monthId);
+  const padD = day < 10 ? '0' + day : String(day);
+  const dateKey = `${year}-${padM}-${padD}`;
+
+  const holidayName = KHMER_PUBLIC_HOLIDAYS[dateKey];
+
+  if (isSunday && holidayName) {
+    return { isDayOff: true, reason: `អាទិត្យ & ${holidayName}` };
+  } else if (isSunday) {
+    return { isDayOff: true, reason: 'ថ្ងៃអាទិត្យ' };
+  } else if (holidayName) {
+    return { isDayOff: true, reason: holidayName };
+  }
+  return { isDayOff: false, reason: '' };
+}
+
 // រក្សាទុកទិន្នន័យប្រចាំថ្ងៃចូលក្នុង Google Sheets
 function saveDailyRecord(data) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const m = parseInt(data.month);
     const d = parseInt(data.day);
+
+    const dayOff = getDayOffInfo(m, d);
+    if (dayOff.isDayOff) {
+      return { success: false, message: `មិនអាចរក្សាទុកបានទេ ព្រោះថ្ងៃទី ${d} ខែ ${m} ត្រូវនឹង ${dayOff.reason} (ថ្ងៃឈប់សម្រាក)!` };
+    }
 
     const sheetClass = getSheetForMonth(ss, 'class', m);
     const sheetSchool = getSheetForMonth(ss, 'school', m);
