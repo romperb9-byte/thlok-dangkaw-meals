@@ -257,6 +257,47 @@ function addNewClassToSystem(className) {
   }
 }
 
+// រកមើលជួរឈរសរុប (Total Columns) ក្នុង sheetClass ដោយស្វ័យប្រវត្តិ
+function findClassSheetTotalCols(sheetClass) {
+  const lastCol = sheetClass.getLastColumn();
+  const headersRow5 = sheetClass.getRange(5, 1, 1, lastCol).getValues()[0];
+  const headersRow6 = sheetClass.getRange(6, 1, 1, lastCol).getValues()[0];
+
+  let attCol = -1;
+  let femaleAttCol = -1;
+  let eatCol = -1;
+  let femaleEatCol = -1;
+
+  for (let c = 1; c <= lastCol; c++) {
+    const h5 = String(headersRow5[c - 1] || '');
+    const h6 = String(headersRow6[c - 1] || '');
+    const combined = h5 + ' ' + h6;
+
+    if (combined.includes('សរុប') && (combined.includes('ហូប') || combined.includes('ស.ហូប'))) {
+      eatCol = c - 1; // 0-based index
+    }
+    if (combined.includes('សរុប') && (combined.includes('វត្តមាន') || combined.includes('ស.ស'))) {
+      attCol = c - 1;
+    }
+    if (combined.includes('សរុប') && (combined.includes('ស.ស្រី') || combined.includes('សិស្សស្រី'))) {
+      femaleAttCol = c - 1;
+    }
+    if (combined.includes('សរុប') && (combined.includes('ហ.ស្រី') || combined.includes('ហូបស្រី'))) {
+      femaleEatCol = c - 1;
+    }
+  }
+
+  // Fallback ប្រសិនបើស្វែងរកមិនឃើញ (ជួរឈរ ៤ ចុងក្រោយនៃទម្រង់ថ្នាក់)
+  if (eatCol === -1) {
+    eatCol = lastCol - 2; // Col AN
+    attCol = lastCol - 4; // Col AL
+    femaleAttCol = lastCol - 3;
+    femaleEatCol = lastCol - 1;
+  }
+
+  return { attCol, femaleAttCol, eatCol, femaleEatCol };
+}
+
 // ទាញយកទិន្នន័យប្រចាំថ្ងៃ និងសង្ខេបប្រចាំខែ (Auto Live)
 function getInitialData(month, day) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -346,8 +387,7 @@ function getInitialData(month, day) {
     saltToday = Number((totalEat * 0.001).toFixed(3));
   }
 
-  // សង្ខេបប្រចាំខែ
-  const lastRow = Math.min(sheetSchool.getLastRow(), 40);
+  // សង្ខេបប្រចាំខែ (គណនាចេញពី sheetClass ដែលជាទិន្នន័យជាក់ស្តែងតាមថ្នាក់)
   let recordedDays = 0;
   let cookedDays = 0;
   let totalEatSum = 0; // ផលបូកសិស្សហូបសរុបក្នុងខែ
@@ -355,8 +395,28 @@ function getInitialData(month, day) {
   let totalMonthOil = 0;
   let totalMonthSeasoning = 0;
 
-  if (lastRow >= 7) {
-    const schoolDataRange = sheetSchool.getRange(7, 1, lastRow - 6, 10).getValues();
+  // 1. អានពី sheetClass ជួរទី 7 ដល់ 37 (ថ្ងៃទី 1 ដល់ 31)
+  const totalCols = findClassSheetTotalCols(sheetClass);
+  const lastClassRow = Math.min(sheetClass.getLastRow(), 40);
+  if (lastClassRow >= 7 && totalCols.eatCol >= 0) {
+    const classRange = sheetClass.getRange(7, 1, lastClassRow - 6, sheetClass.getLastColumn()).getValues();
+    classRange.forEach(row => {
+      const eat = Number(row[totalCols.eatCol]) || 0;
+      const att = totalCols.attCol >= 0 ? (Number(row[totalCols.attCol]) || 0) : 0;
+      if (eat > 0) {
+        cookedDays++;
+        totalEatSum += eat;
+      }
+      if (att > 0 || eat > 0) {
+        recordedDays++;
+      }
+    });
+  }
+
+  // 2. អានគ្រឿងឧបភោគពី sheetSchool
+  const lastSchoolRow = Math.min(sheetSchool.getLastRow(), 40);
+  if (lastSchoolRow >= 7) {
+    const schoolDataRange = sheetSchool.getRange(7, 1, lastSchoolRow - 6, 10).getValues();
     schoolDataRange.forEach(row => {
       const cookFlag = String(row[1] || '').trim();
       const att = Number(row[2]) || 0;
@@ -365,19 +425,20 @@ function getInitialData(month, day) {
       const o = Number(row[7]) || 0;
       const s = Number(row[8]) || 0;
 
-      // ថ្ងៃបានចម្អិន (មានសិស្សហូប > 0 ឬ បានចម្អិន = "បាទ/ចាស" ឬ អង្ករ > 0)
-      if (eat > 0 || cookFlag === 'បាទ/ចាស' || r > 0) {
-        cookedDays++;
-        totalEatSum += eat;
-      }
-
-      if (att > 0 || eat > 0 || r > 0) {
-        recordedDays++;
-      }
-
       totalMonthRice += r;
       totalMonthOil += o;
       totalMonthSeasoning += s;
+
+      // បើ sheetClass ពុំទាន់មានទិន្នន័យ (fallback ទៅ sheetSchool)
+      if (totalEatSum === 0) {
+        if (eat > 0 || cookFlag === 'បាទ/ចាស' || r > 0) {
+          cookedDays++;
+          totalEatSum += eat;
+        }
+        if (att > 0 || eat > 0 || r > 0) {
+          recordedDays++;
+        }
+      }
     });
   }
 

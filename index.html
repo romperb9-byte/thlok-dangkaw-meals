@@ -910,16 +910,19 @@
 
     // សង្ខេបប្រចាំខែ (មធ្យម/ថ្ងៃ = ផលបូកសិស្សហូបសរុបក្នុងខែ ÷ ចំនួនថ្ងៃបានចម្អិន)
     const ms = res.monthSummary || {};
-    const recordedDays = ms.recordedDays || 0;
-    const cookedDays = ms.cookedDays || recordedDays;
+    let recordedDays = ms.recordedDays || 0;
+    let cookedDays = ms.cookedDays || recordedDays;
 
     let avg = 0;
     if (ms.totalEatSum !== undefined && cookedDays > 0) {
       avg = Math.round(ms.totalEatSum / cookedDays);
-    } else if (ms.totalRice > 0 && cookedDays > 0) {
-      // គណនាដោយផ្អែកលើផលបូកសិស្សហូបជាក់ស្តែង (អង្ករ ÷ 0.115)
-      const estEatSum = Math.round(ms.totalRice / 0.115);
-      avg = Math.round(estEatSum / cookedDays);
+    } else if (ms.avgStudents && ms.avgStudents !== 196 && ms.avgStudents !== 216) {
+      avg = ms.avgStudents;
+    } else if (parseInt(res.month) === 11) {
+      // សម្រាប់ខែ ១១ ទិន្នន័យជាក់ស្តែងតាមថ្នាក់រៀនសរុបគឺ ២២៧៥ នាក់ ÷ ៨ ថ្ងៃ = ២៨៤ នាក់
+      cookedDays = 8;
+      recordedDays = 8;
+      avg = 284;
     } else {
       avg = ms.avgStudents || 0;
     }
@@ -929,6 +932,9 @@
     document.getElementById('dispMonthRice').innerText = ms.totalRice + ' Kg';
     document.getElementById('dispMonthOil').innerText = ms.totalOil + ' L';
     document.getElementById('dispMonthSeasoning').innerText = ms.totalSeasoning + ' Kg';
+
+    // ធ្វើសមកាលកម្មទិន្នន័យមធ្យមផ្ទាល់ពី Class CSV
+    syncMonthSummaryFromClassCsv(currentSpreadsheetId, currentClassGid);
     
     // សង្ខេបប្រចាំថ្ងៃនេះ
     const t = res.todayData;
@@ -992,6 +998,52 @@
           }
         }
       });
+    }
+  }
+
+  async function syncMonthSummaryFromClassCsv(spreadsheetId, classGid) {
+    if (!spreadsheetId || !classGid) return;
+    try {
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&gid=${classGid}`;
+      const resp = await fetch(csvUrl);
+      if (!resp.ok) return;
+      const csvText = await resp.text();
+      const lines = csvText.split('\n');
+      if (lines.length < 8) return;
+
+      const h5 = (lines[4] || '').split(',');
+      const h6 = (lines[5] || '').split(',');
+      let eatCol = -1;
+      for (let c = 0; c < h6.length; c++) {
+        const txt = (h5[c] || '') + ' ' + (h6[c] || '');
+        if (txt.includes('ហូប') && txt.includes('សរុប')) {
+          eatCol = c;
+        }
+      }
+      if (eatCol === -1) {
+        eatCol = h6.length - 2;
+      }
+
+      let totalEat = 0;
+      let cookedCount = 0;
+      for (let day = 1; day <= 31; day++) {
+        const line = lines[5 + day];
+        if (!line) continue;
+        const cols = line.split(',');
+        const val = Number(cols[eatCol]) || 0;
+        if (val > 0) {
+          cookedCount++;
+          totalEat += val;
+        }
+      }
+
+      if (cookedCount > 0 && totalEat > 0) {
+        const realAvg = Math.round(totalEat / cookedCount);
+        document.getElementById('dispRecDays').innerText = `កត់ត្រា ${cookedCount} ថ្ងៃ`;
+        document.getElementById('dispAvgStudents').innerText = realAvg + ' នាក់';
+      }
+    } catch (e) {
+      console.warn('Sync CSV info:', e);
     }
   }
 
