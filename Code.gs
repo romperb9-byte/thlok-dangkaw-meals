@@ -349,31 +349,41 @@ function getInitialData(month, day) {
   // សង្ខេបប្រចាំខែ
   const lastRow = Math.min(sheetSchool.getLastRow(), 40);
   let recordedDays = 0;
+  let cookedDays = 0;
+  let totalEatSum = 0; // ផលបូកសិស្សហូបសរុបក្នុងខែ
   let totalMonthRice = 0;
   let totalMonthOil = 0;
   let totalMonthSeasoning = 0;
-  let totalStudentsSum = 0;
 
   if (lastRow >= 7) {
     const schoolDataRange = sheetSchool.getRange(7, 1, lastRow - 6, 10).getValues();
     schoolDataRange.forEach(row => {
+      const cookFlag = String(row[1] || '').trim();
       const att = Number(row[2]) || 0;
       const eat = Number(row[4]) || 0;
       const r = Number(row[6]) || 0;
       const o = Number(row[7]) || 0;
       const s = Number(row[8]) || 0;
 
+      // ថ្ងៃបានចម្អិន (មានសិស្សហូប > 0 ឬ បានចម្អិន = "បាទ/ចាស" ឬ អង្ករ > 0)
+      if (eat > 0 || cookFlag === 'បាទ/ចាស' || r > 0) {
+        cookedDays++;
+        totalEatSum += eat;
+      }
+
       if (att > 0 || eat > 0 || r > 0) {
         recordedDays++;
-        totalStudentsSum += att;
       }
+
       totalMonthRice += r;
       totalMonthOil += o;
       totalMonthSeasoning += s;
     });
   }
 
-  const avgStudents = recordedDays > 0 ? Math.round(totalStudentsSum / recordedDays) : 0;
+  // មធ្យម/ថ្ងៃ = (ផលបូកសិស្សហូបសរុបក្នុងខែ / ចំនួនថ្ងៃបានចម្អិន)
+  const daysCount = cookedDays > 0 ? cookedDays : (recordedDays > 0 ? recordedDays : 0);
+  const avgStudents = daysCount > 0 ? Math.round(totalEatSum / daysCount) : 0;
 
   return {
     month: m,
@@ -398,6 +408,8 @@ function getInitialData(month, day) {
     },
     monthSummary: {
       recordedDays: recordedDays,
+      cookedDays: cookedDays,
+      totalEatSum: totalEatSum,
       totalRice: Number(totalMonthRice.toFixed(2)),
       totalOil: Number(totalMonthOil.toFixed(3)),
       totalSeasoning: Number(totalMonthSeasoning.toFixed(3)),

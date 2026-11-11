@@ -814,12 +814,27 @@
     currentClassName = res.classSheetName || '';
     updateMonthBadge();
 
-    // សង្ខេបប្រចាំខែ
-    document.getElementById('dispRecDays').innerText = `កត់ត្រា ${res.monthSummary.recordedDays} ថ្ងៃ`;
-    document.getElementById('dispAvgStudents').innerText = res.monthSummary.avgStudents + ' នាក់';
-    document.getElementById('dispMonthRice').innerText = res.monthSummary.totalRice + ' Kg';
-    document.getElementById('dispMonthOil').innerText = res.monthSummary.totalOil + ' L';
-    document.getElementById('dispMonthSeasoning').innerText = res.monthSummary.totalSeasoning + ' Kg';
+    // សង្ខេបប្រចាំខែ (មធ្យម/ថ្ងៃ = ផលបូកសិស្សហូបសរុបក្នុងខែ ÷ ចំនួនថ្ងៃបានចម្អិន)
+    const ms = res.monthSummary || {};
+    const recordedDays = ms.recordedDays || 0;
+    const cookedDays = ms.cookedDays || recordedDays;
+
+    let avg = 0;
+    if (ms.totalEatSum !== undefined && cookedDays > 0) {
+      avg = Math.round(ms.totalEatSum / cookedDays);
+    } else if (ms.totalRice > 0 && cookedDays > 0) {
+      // គណនាដោយផ្អែកលើផលបូកសិស្សហូបជាក់ស្តែង (អង្ករ ÷ 0.115)
+      const estEatSum = Math.round(ms.totalRice / 0.115);
+      avg = Math.round(estEatSum / cookedDays);
+    } else {
+      avg = ms.avgStudents || 0;
+    }
+
+    document.getElementById('dispRecDays').innerText = `កត់ត្រា ${recordedDays} ថ្ងៃ`;
+    document.getElementById('dispAvgStudents').innerText = avg + ' នាក់';
+    document.getElementById('dispMonthRice').innerText = ms.totalRice + ' Kg';
+    document.getElementById('dispMonthOil').innerText = ms.totalOil + ' L';
+    document.getElementById('dispMonthSeasoning').innerText = ms.totalSeasoning + ' Kg';
     
     // សង្ខេបប្រចាំថ្ងៃនេះ
     const t = res.todayData;
