@@ -233,22 +233,49 @@
       </div>
     </div>
 
-    <!-- ប៊ូតុងទាញយករបាយការណ៍សាលាជា PDF និង Excel -->
-    <div class="border-top pt-2">
-      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <span class="small fw-bold text-dark">
-          📄 របាយការណ៍ <span id="downloadMonthName" class="badge bg-primary text-white">ខែ...</span>៖
+    <!-- ផ្នែកទាញយករបាយការណ៍ (ទិន្នន័យសាលា និង ទិន្នន័យថ្នាក់) -->
+    <div class="border-top pt-3 mt-2">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="fw-bold small text-dark">
+          📥 ទាញយករបាយការណ៍ប្រចាំ <span id="downloadMonthName" class="badge bg-primary text-white">ខែ...</span>៖
         </span>
-        <div class="d-flex flex-wrap gap-2">
-          <button type="button" onclick="downloadReport('pdf', 'school')" class="btn btn-outline-danger btn-sm fw-bold px-3 py-1 shadow-sm">
-            📕 ទាញយក PDF សាលា
-          </button>
-          <button type="button" onclick="downloadReport('excel', 'school')" class="btn btn-outline-success btn-sm fw-bold px-3 py-1 shadow-sm">
-            📗 ទាញយក Excel
-          </button>
-          <button type="button" onclick="downloadReport('pdf', 'class')" class="btn btn-outline-secondary btn-sm fw-bold px-2 py-1 shadow-sm" title="ទាញយកសន្លឹកទិន្នន័យវត្តមានតាមថ្នាក់ប្រចាំខែនេះ">
-            📑 PDF ថ្នាក់
-          </button>
+      </div>
+
+      <div class="row g-2">
+        <!-- ជម្រើសទី ១៖ ទិន្នន័យសាលា -->
+        <div class="col-12 col-md-6">
+          <div class="p-2 border rounded-3 bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <strong class="d-block small text-dark">🏫 របាយការណ៍សាលា</strong>
+              <small class="text-muted" style="font-size: 11px;">(ទិន្នន័យរួម និងគ្រឿងឧបភោគសាលា)</small>
+            </div>
+            <div class="d-flex gap-1">
+              <button type="button" onclick="downloadReport('pdf', 'school')" class="btn btn-danger btn-sm fw-bold px-2 py-1 shadow-sm" title="ទាញយក PDF សន្លឹកទិន្នន័យសាលា">
+                📕 PDF សាលា
+              </button>
+              <button type="button" onclick="downloadReport('excel', 'school')" class="btn btn-success btn-sm fw-bold px-2 py-1 shadow-sm" title="ទាញយក Excel សន្លឹកទិន្នន័យសាលា">
+                📗 Excel
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ជម្រើសទី ២៖ ទិន្នន័យថ្នាក់ (ទាញចេញពីសន្លឹកទិន្នន័យថ្នាក់_ខែ...) -->
+        <div class="col-12 col-md-6">
+          <div class="p-2 border rounded-3 bg-light d-flex justify-content-between align-items-center flex-wrap gap-2 border-primary-subtle">
+            <div>
+              <strong class="d-block small text-primary">👨‍🏫 របាយការណ៍តាមថ្នាក់</strong>
+              <small class="text-muted" style="font-size: 11px;">(សន្លឹកវត្តមានគ្រប់ថ្នាក់រៀន)</small>
+            </div>
+            <div class="d-flex gap-1">
+              <button type="button" onclick="downloadReport('pdf', 'class')" class="btn btn-outline-danger btn-sm fw-bold px-2 py-1 shadow-sm" title="ទាញយក PDF សន្លឹកទិន្នន័យថ្នាក់">
+                📕 PDF ថ្នាក់
+              </button>
+              <button type="button" onclick="downloadReport('excel', 'class')" class="btn btn-outline-success btn-sm fw-bold px-2 py-1 shadow-sm" title="ទាញយក Excel សន្លឹកទិន្នន័យថ្នាក់">
+                📗 Excel
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -357,12 +384,29 @@
   // អថេរសម្រាប់ទាញយករបាយការណ៍ PDF / Excel តាមខែជាក់ស្តែង
   let currentSpreadsheetId = '1eO7G0Z8r9_0Ms0PnURnz-QqzXm0sZrSJX9lFS5Dves8';
   let currentSchoolGid = 1578172104;
-  let currentClassGid = null;
-  let currentSchoolName = '';
-  let currentClassName = '';
+  let currentClassGid = 646796275;
+  let currentSchoolName = 'ទិន្នន័យសាលា_ខែ11';
+  let currentClassName = 'ទិន្នន័យថ្នាក់_ខែ11';
+
+  // ផែនទី Sheet GID នៃខែដែលមានស្រាប់ក្នុង Spreadsheet (Fallback)
+  const KNOWN_SHEET_GIDS = {
+    11: { school: 1578172104, class: 646796275 }, // ទិន្នន័យសាលា_ខែ11 & ទិន្នន័យថ្នាក់_ខែ11
+    12: { school: 1357596312, class: 167782 }     // ទិន្នន័យសាលា_ខែ12 & ទិន្នន័យថ្នាក់_ខែ12
+  };
 
   function downloadReport(format, type = 'school') {
-    const gid = (type === 'school') ? currentSchoolGid : currentClassGid;
+    const selectedMonth = parseInt(document.getElementById('selectedMonth').value) || 11;
+    let gid = (type === 'school') ? currentSchoolGid : currentClassGid;
+
+    // ប្រសិនបើ API មិនទាន់ return GID នៃថ្នាក់ ប្រើប្រាស់ Fallback តាមខែ
+    if (gid === null || gid === undefined) {
+      if (KNOWN_SHEET_GIDS[selectedMonth]) {
+        gid = KNOWN_SHEET_GIDS[selectedMonth][type];
+      } else {
+        gid = (type === 'school') ? 1 : 0; // សន្លឹកមេដើម (សាលា=1, ថ្នាក់=0)
+      }
+    }
+
     if (!currentSpreadsheetId || gid === null || gid === undefined) {
       alert("ទិន្នន័យនៃខែនេះកំពុងទាញយក សូមរង់ចាំមួយភ្លែត រួចសាកល្បងចុចម្តងទៀត!");
       return;
@@ -765,7 +809,7 @@
     // រក្សាទុក ID និង GID សម្រាប់ទាញយក PDF / Excel តាមខែដែលកំពុងស្ថិតនៅ
     currentSpreadsheetId = res.spreadsheetId || currentSpreadsheetId;
     currentSchoolGid = res.schoolSheetGid;
-    currentClassGid = res.classSheetGid;
+    currentClassGid = res.classSheetGid || (KNOWN_SHEET_GIDS[res.month] ? KNOWN_SHEET_GIDS[res.month].class : null);
     currentSchoolName = res.schoolSheetName || '';
     currentClassName = res.classSheetName || '';
     updateMonthBadge();
