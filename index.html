@@ -149,6 +149,9 @@
           <!-- ថ្ងៃទី -->
         </select>
       </div>
+      <button type="button" class="btn btn-warning btn-sm fw-bold px-2 py-1 shadow-sm text-dark" onclick="goToToday()" title="លោតទៅកាន់ថ្ងៃនេះផ្ទាល់ (ម៉ោងនៅកម្ពុជា)">
+        📅 ថ្ងៃនេះ
+      </button>
       <button type="button" class="btn btn-light btn-sm fw-bold px-2 py-1 shadow-sm" onclick="fetchData()" title="ទាញទិន្នន័យផ្ទាល់ថ្មីពី Spreadsheet">
         🔄 Live
       </button>
@@ -565,33 +568,77 @@
     }, 30000);
   });
 
+  // ទទួលបានកាលបរិច្ឆេទ និងម៉ោងបច្ចុប្បន្ននៅកម្ពុជាផ្ទាល់ (Asia/Phnom_Penh, UTC+7)
+  function getCambodiaNow() {
+    try {
+      const cambodiaStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Phnom_Penh" });
+      return new Date(cambodiaStr);
+    } catch (e) {
+      const now = new Date();
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      return new Date(utc + (7 * 3600000));
+    }
+  }
+
+  function goToToday() {
+    const now = getCambodiaNow();
+    const currentMonthNum = now.getMonth() + 1;
+    const currentDayNum = now.getDate();
+
+    const monthSelect = document.getElementById('selectedMonth');
+    if (COOKING_MONTHS.some(m => m.id === currentMonthNum)) {
+      monthSelect.value = currentMonthNum;
+    } else {
+      monthSelect.value = 11;
+    }
+
+    updateDaysDropdown(currentDayNum);
+    updateMonthBadge();
+    fetchData();
+  }
+
   function initMonthAndDayPickers() {
     const monthSelect = document.getElementById('selectedMonth');
-    const now = new Date();
+    const now = getCambodiaNow();
     const currentMonthNum = now.getMonth() + 1;
+    const currentDayNum = now.getDate();
     
     monthSelect.innerHTML = COOKING_MONTHS.map(m => 
       `<option value="${m.id}" ${m.id === currentMonthNum ? 'selected' : ''}>${m.name}</option>`
     ).join('');
 
-    if (!COOKING_MONTHS.some(m => m.id === currentMonthNum)) {
+    if (COOKING_MONTHS.some(m => m.id === currentMonthNum)) {
+      monthSelect.value = currentMonthNum;
+    } else {
       monthSelect.value = 11;
     }
 
-    updateDaysDropdown();
-    document.getElementById('selectedDay').value = Math.min(now.getDate(), 30);
+    updateDaysDropdown(currentDayNum);
     updateMonthBadge();
   }
 
-  function updateDaysDropdown() {
+  function updateDaysDropdown(targetDay) {
     const monthId = parseInt(document.getElementById('selectedMonth').value);
     const monthObj = COOKING_MONTHS.find(m => m.id === monthId) || { days: 31 };
     const daySelect = document.getElementById('selectedDay');
-    const prevDay = parseInt(daySelect.value) || 1;
+    
+    const nowCam = getCambodiaNow();
+    const currentMonthNum = nowCam.getMonth() + 1;
+    const todayInCam = nowCam.getDate();
+
+    // បើស្ថិតក្នុងខែបច្ចុប្បន្ននៅកម្ពុជា និងមិនបានបញ្ជាក់ targetDay យកថ្ងៃនេះ
+    let desiredDay;
+    if (targetDay !== undefined) {
+      desiredDay = targetDay;
+    } else if (monthId === currentMonthNum) {
+      desiredDay = todayInCam;
+    } else {
+      desiredDay = parseInt(daySelect.value) || 1;
+    }
 
     daySelect.innerHTML = '';
+    let selectedSet = false;
     let firstValidDay = null;
-    let isPrevDayValid = false;
 
     for (let i = 1; i <= monthObj.days; i++) {
       const dayOff = getDayOffInfo(monthId, i);
@@ -611,13 +658,18 @@
         opt.text = `ថ្ងៃទី ${i} (${dayOff.dayName})`;
         opt.style.fontWeight = 'bold';
         if (!firstValidDay) firstValidDay = i;
-        if (i === prevDay) isPrevDayValid = true;
       }
+
+      if (i === desiredDay) {
+        opt.selected = true;
+        selectedSet = true;
+      }
+
       daySelect.appendChild(opt);
     }
 
-    if (isPrevDayValid) {
-      daySelect.value = prevDay;
+    if (selectedSet) {
+      daySelect.value = desiredDay;
     } else if (firstValidDay) {
       daySelect.value = firstValidDay;
     } else {

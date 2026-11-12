@@ -301,8 +301,10 @@ function findClassSheetTotalCols(sheetClass) {
 // ទាញយកទិន្នន័យប្រចាំថ្ងៃ និងសង្ខេបប្រចាំខែ (Auto Live)
 function getInitialData(month, day) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const m = parseInt(month) || (new Date().getMonth() + 1);
-  const d = parseInt(day) || new Date().getDate();
+  // កំណត់កាលបរិច្ឆេទលំនាំដើមតាមម៉ោងនៅកម្ពុជា (Asia/Phnom_Penh, UTC+7)
+  const cambodiaNow = new Date(Utilities.formatDate(new Date(), 'Asia/Phnom_Penh', 'yyyy/MM/dd HH:mm:ss'));
+  const m = parseInt(month) || (cambodiaNow.getMonth() + 1);
+  const d = parseInt(day) || cambodiaNow.getDate();
 
   const classList = getSystemClassList(ss);
   const sheetClass = getSheetForMonth(ss, 'class', m);
